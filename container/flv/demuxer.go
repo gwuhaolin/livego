@@ -1,0 +1,44 @@
+package flv
+
+import (
+	"errors"
+	"github.com/gwuhaolin/livego/av"
+)
+
+var (
+	ErrAvcEndSEQ = errors.New("avc end sequence")
+)
+
+type Demuxer struct {
+}
+
+func NewDemuxer() *Demuxer {
+	return &Demuxer{}
+}
+
+func (self *Demuxer) DemuxH(p *av.Packet) error {
+	var tag Tag
+	_, err := tag.ParseMeidaTagHeader(p.Data, p.IsVideo)
+	if err != nil {
+		return err
+	}
+	p.Header = &tag
+
+	return nil
+}
+
+func (self *Demuxer) Demux(p *av.Packet) error {
+	var tag Tag
+	n, err := tag.ParseMeidaTagHeader(p.Data, p.IsVideo)
+	if err != nil {
+		return err
+	}
+	if tag.CodecID() == av.VIDEO_H264 &&
+		p.Data[0] == 0x17 && p.Data[1] == 0x02 {
+		return ErrAvcEndSEQ
+	}
+	p.Header = &tag
+	p.Data = p.Data[n:]
+
+	return nil
+}
