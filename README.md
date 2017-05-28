@@ -1,4 +1,4 @@
-# AV streaming server
+# livego - a streaming server in pure go
 
 ## Feature
 - write in pure golang, can run in any platform
