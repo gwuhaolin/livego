@@ -6,7 +6,7 @@
 - support `RTMP` and `FLV` `HLS` over HTTP
 
 ## Use
-1. run `git clone `
+1. run `git clone https://github.com/gwuhaolin/livego.git`
 2. run  `go run main.go` to start livego server
 3. push `RTMP` stream to `rtmp://localhost:1935/live/movie`, eg use `ffmpeg -re -i demo.flv -c copy -f flv rtmp://localhost:1935/live/movie`
 4. play stream use [VLC](http://www.videolan.org/vlc/index.html) or other players 
