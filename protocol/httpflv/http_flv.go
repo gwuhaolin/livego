@@ -126,7 +126,7 @@ type FLVWriter struct {
 
 func NewFLVWriter(app, title, url string, ctx http.ResponseWriter) *FLVWriter {
 	ret := &FLVWriter{
-		Uid:         uid.NEWID(),
+		Uid:         uid.NewId(),
 		app:         app,
 		title:       title,
 		url:         url,

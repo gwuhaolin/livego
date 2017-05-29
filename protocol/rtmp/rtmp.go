@@ -142,7 +142,7 @@ type VirWriter struct {
 
 func NewVirWriter(conn StreamReadWriteCloser) *VirWriter {
 	ret := &VirWriter{
-		Uid:         uid.NEWID(),
+		Uid:         uid.NewId(),
 		conn:        conn,
 		RWBaser:     av.NewRWBaser(time.Second * time.Duration(*writeTimeout)),
 		packetQueue: make(chan av.Packet, maxQueueNum),
@@ -279,7 +279,7 @@ type VirReader struct {
 
 func NewVirReader(conn StreamReadWriteCloser) *VirReader {
 	return &VirReader{
-		Uid:     uid.NEWID(),
+		Uid:     uid.NewId(),
 		conn:    conn,
 		RWBaser: av.NewRWBaser(time.Second * time.Duration(*writeTimeout)),
 		demuxer: flv.NewDemuxer(),
