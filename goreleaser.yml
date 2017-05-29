@@ -7,5 +7,5 @@ build:
       - freebsd
   goarch:
       - amd64
+      - 386
       - arm
-      - arm64

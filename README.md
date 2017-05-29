@@ -24,7 +24,7 @@ live streaming server write in pure go, simple efficient and can run in any plat
 TODO
 
 ### Install System Service
-- Mac
+TODO
 
 ### Build From Source code
 1. run `git clone https://github.com/gwuhaolin/livego.git`
