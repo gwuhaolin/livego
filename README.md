@@ -33,7 +33,7 @@ TODO
 ## Use
 2. run  `livego` to start livego server
 3. push `RTMP` stream to `rtmp://localhost:1935/live/movie`, eg use `ffmpeg -re -i demo.flv -c copy -f flv rtmp://localhost:1935/live/movie`
-4. play stream use [VLC](http://www.videolan.org/vlc/index.html) or other players 
-    - play `RTMP` from `rtmp://localhost:1935/live/movie`
-    - play `FLV` from `http://127.0.0.1:8081/live/movie.flv`
-    - play `HLS` from `http://127.0.0.1:8082/live/movie.m3u8`
+4. play live stream form:
+    - `RTMP`:`rtmp://localhost:1935/live/movie`
+    - `FLV`:`http://127.0.0.1:8081/live/movie.flv`
+    - `HLS`:`http://127.0.0.1:8082/live/movie.m3u8`
