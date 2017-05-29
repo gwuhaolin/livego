@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 	"log"
-	"github.com/gwuhaolin/livego/utils/cmap"
 	"github.com/gwuhaolin/livego/av"
+	"github.com/orcaman/concurrent-map"
 )
 
 const (
