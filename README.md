@@ -2,16 +2,16 @@
 live streaming server write in pure go, simple efficient and can run in any platform.
 
 ## Support
-#### Protocol
+#### Transport protocol
+- [x] RTMP
 - [x] AMF
 - [x] HLS
 - [x] HTTP-FLV
 - [ ] WebSocket-FLV
-- [x] RTMP
-#### Container
+#### File container
 - [x] FLV
 - [x] TS
-#### Code
+#### AV coder
 - [x] H264
 - [x] AAC
 - [x] MP3
