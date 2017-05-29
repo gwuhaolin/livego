@@ -14,8 +14,8 @@ import (
 var (
 	rtmpAddr = flag.String("rtmp-addr", ":1935", "RTMP server listen address")
 	operaAddr = flag.String("manage-addr", ":8080", "HTTP manage interface server listen address")
-	flvAddr = flag.String("flv-addr", ":8081", "HTTP-FLV server listen address")
-	hlsAddr = flag.String("hls-addr", ":8082", "HLS server listen address")
+	flvAddr = flag.String("flv-addr", ":7001", "HTTP-FLV server listen address")
+	hlsAddr = flag.String("hls-addr", ":7002", "HLS server listen address")
 )
 
 func init() {
