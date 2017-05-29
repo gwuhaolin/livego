@@ -1,7 +1,7 @@
 package httpflv
 
 import (
-	"net/http"
+	"io"
 	"time"
 	"errors"
 	"log"
@@ -23,11 +23,11 @@ type FLVWriter struct {
 	buf             []byte
 	closed          bool
 	closedChan      chan struct{}
-	ctx             http.ResponseWriter
+	ctx             io.Writer
 	packetQueue     chan av.Packet
 }
 
-func NewFLVWriter(app, title, url string, ctx http.ResponseWriter) *FLVWriter {
+func NewFLVWriter(app, title, url string, ctx io.Writer) *FLVWriter {
 	ret := &FLVWriter{
 		Uid:         uid.NewId(),
 		app:         app,
