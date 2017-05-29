@@ -12,10 +12,10 @@ import (
 )
 
 var (
-	rtmpAddr = flag.String("rtmpAddr", ":1935", "The rtmp server address to bind.")
-	operaAddr = flag.String("operaAddr", ":8080", "the http operation or config address to bind.")
-	flvAddr = flag.String("flvAddr", ":8081", "the http-flv server address to bind.")
-	hlsAddr = flag.String("hlsAddr", ":8082", "the hls server address to bind.")
+	rtmpAddr = flag.String("rtmp-addr", ":1935", "RTMP server listen address")
+	operaAddr = flag.String("manage-addr", ":8080", "HTTP manage interface server listen address")
+	flvAddr = flag.String("flv-addr", ":8081", "HTTP-FLV server listen address")
+	hlsAddr = flag.String("hls-addr", ":8082", "HLS server listen address")
 )
 
 func init() {

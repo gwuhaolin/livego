@@ -7,13 +7,13 @@ type Pool struct {
 
 const maxpoolsize = 500 * 1024
 
-func (self *Pool) Get(size int) []byte {
-	if maxpoolsize-self.pos < size {
-		self.pos = 0
-		self.buf = make([]byte, maxpoolsize)
+func (pool *Pool) Get(size int) []byte {
+	if maxpoolsize-pool.pos < size {
+		pool.pos = 0
+		pool.buf = make([]byte, maxpoolsize)
 	}
-	b := self.buf[self.pos: self.pos+size]
-	self.pos += size
+	b := pool.buf[pool.pos: pool.pos+size]
+	pool.pos += size
 	return b
 }
 

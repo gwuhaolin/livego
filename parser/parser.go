@@ -23,27 +23,27 @@ func NewCodecParser() *CodecParser {
 	return &CodecParser{}
 }
 
-func (self *CodecParser) SampleRate() (int, error) {
-	if self.aac == nil && self.mp3 == nil {
+func (codeParser *CodecParser) SampleRate() (int, error) {
+	if codeParser.aac == nil && codeParser.mp3 == nil {
 		return 0, errNoAudio
 	}
-	if self.aac != nil {
-		return self.aac.SampleRate(), nil
+	if codeParser.aac != nil {
+		return codeParser.aac.SampleRate(), nil
 	}
-	return self.mp3.SampleRate(), nil
+	return codeParser.mp3.SampleRate(), nil
 }
 
-func (self *CodecParser) Parse(p *av.Packet, w io.Writer) (err error) {
+func (codeParser *CodecParser) Parse(p *av.Packet, w io.Writer) (err error) {
 
 	switch p.IsVideo {
 	case true:
 		f, ok := p.Header.(av.VideoPacketHeader)
 		if ok {
 			if f.CodecID() == av.VIDEO_H264 {
-				if self.h264 == nil {
-					self.h264 = h264.NewParser()
+				if codeParser.h264 == nil {
+					codeParser.h264 = h264.NewParser()
 				}
-				err = self.h264.Parse(p.Data, f.IsSeq(), w)
+				err = codeParser.h264.Parse(p.Data, f.IsSeq(), w)
 			}
 		}
 	case false:
@@ -51,15 +51,15 @@ func (self *CodecParser) Parse(p *av.Packet, w io.Writer) (err error) {
 		if ok {
 			switch f.SoundFormat() {
 			case av.SOUND_AAC:
-				if self.aac == nil {
-					self.aac = aac.NewParser()
+				if codeParser.aac == nil {
+					codeParser.aac = aac.NewParser()
 				}
-				err = self.aac.Parse(p.Data, f.AACPacketType(), w)
+				err = codeParser.aac.Parse(p.Data, f.AACPacketType(), w)
 			case av.SOUND_MP3:
-				if self.mp3 == nil {
-					self.mp3 = mp3.NewParser()
+				if codeParser.mp3 == nil {
+					codeParser.mp3 = mp3.NewParser()
 				}
-				err = self.mp3.Parse(p.Data)
+				err = codeParser.mp3.Parse(p.Data)
 			}
 		}
 

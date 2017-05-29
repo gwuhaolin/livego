@@ -105,74 +105,74 @@ type Tag struct {
 	mediat mediaTag
 }
 
-func (self *Tag) SoundFormat() uint8 {
-	return self.mediat.soundFormat
+func (tag *Tag) SoundFormat() uint8 {
+	return tag.mediat.soundFormat
 }
 
-func (self *Tag) AACPacketType() uint8 {
-	return self.mediat.aacPacketType
+func (tag *Tag) AACPacketType() uint8 {
+	return tag.mediat.aacPacketType
 }
 
-func (self *Tag) IsKeyFrame() bool {
-	return self.mediat.frameType == av.FRAME_KEY
+func (tag *Tag) IsKeyFrame() bool {
+	return tag.mediat.frameType == av.FRAME_KEY
 }
 
-func (self *Tag) IsSeq() bool {
-	return self.mediat.frameType == av.FRAME_KEY &&
-		self.mediat.avcPacketType == av.AVC_SEQHDR
+func (tag *Tag) IsSeq() bool {
+	return tag.mediat.frameType == av.FRAME_KEY &&
+		tag.mediat.avcPacketType == av.AVC_SEQHDR
 }
 
-func (self *Tag) CodecID() uint8 {
-	return self.mediat.codecID
+func (tag *Tag) CodecID() uint8 {
+	return tag.mediat.codecID
 }
 
-func (self *Tag) CompositionTime() int32 {
-	return self.mediat.compositionTime
+func (tag *Tag) CompositionTime() int32 {
+	return tag.mediat.compositionTime
 }
 
 // ParseMeidaTagHeader, parse video, audio, tag header
-func (self *Tag) ParseMeidaTagHeader(b []byte, isVideo bool) (n int, err error) {
+func (tag *Tag) ParseMeidaTagHeader(b []byte, isVideo bool) (n int, err error) {
 	switch isVideo {
 	case false:
-		n, err = self.parseAudioHeader(b)
+		n, err = tag.parseAudioHeader(b)
 	case true:
-		n, err = self.parseVideoHeader(b)
+		n, err = tag.parseVideoHeader(b)
 	}
 	return
 }
 
-func (self *Tag) parseAudioHeader(b []byte) (n int, err error) {
+func (tag *Tag) parseAudioHeader(b []byte) (n int, err error) {
 	if len(b) < n+1 {
 		err = fmt.Errorf("invalid audiodata len=%d", len(b))
 		return
 	}
 	flags := b[0]
-	self.mediat.soundFormat = flags >> 4
-	self.mediat.soundRate = (flags >> 2) & 0x3
-	self.mediat.soundSize = (flags >> 1) & 0x1
-	self.mediat.soundType = flags & 0x1
+	tag.mediat.soundFormat = flags >> 4
+	tag.mediat.soundRate = (flags >> 2) & 0x3
+	tag.mediat.soundSize = (flags >> 1) & 0x1
+	tag.mediat.soundType = flags & 0x1
 	n++
-	switch self.mediat.soundFormat {
+	switch tag.mediat.soundFormat {
 	case av.SOUND_AAC:
-		self.mediat.aacPacketType = b[1]
+		tag.mediat.aacPacketType = b[1]
 		n++
 	}
 	return
 }
 
-func (self *Tag) parseVideoHeader(b []byte) (n int, err error) {
+func (tag *Tag) parseVideoHeader(b []byte) (n int, err error) {
 	if len(b) < n+5 {
 		err = fmt.Errorf("invalid videodata len=%d", len(b))
 		return
 	}
 	flags := b[0]
-	self.mediat.frameType = flags >> 4
-	self.mediat.codecID = flags & 0xf
+	tag.mediat.frameType = flags >> 4
+	tag.mediat.codecID = flags & 0xf
 	n++
-	if self.mediat.frameType == av.FRAME_INTER || self.mediat.frameType == av.FRAME_KEY {
-		self.mediat.avcPacketType = b[1]
+	if tag.mediat.frameType == av.FRAME_INTER || tag.mediat.frameType == av.FRAME_KEY {
+		tag.mediat.avcPacketType = b[1]
 		for i := 2; i < 5; i++ {
-			self.mediat.compositionTime = self.mediat.compositionTime<<8 + int32(b[i])
+			tag.mediat.compositionTime = tag.mediat.compositionTime<<8 + int32(b[i])
 		}
 		n += 4
 	}

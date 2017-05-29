@@ -25,9 +25,9 @@ func NewCache() *Cache {
 	}
 }
 
-func (self *Cache) Write(p av.Packet) {
+func (cache *Cache) Write(p av.Packet) {
 	if p.IsMetadata {
-		self.metadata.Write(p)
+		cache.metadata.Write(p)
 		return
 	} else {
 		if !p.IsVideo {
@@ -35,7 +35,7 @@ func (self *Cache) Write(p av.Packet) {
 			if ok {
 				if ah.SoundFormat() == av.SOUND_AAC &&
 					ah.AACPacketType() == av.AAC_SEQHDR {
-					self.audioSeq.Write(p)
+					cache.audioSeq.Write(p)
 					return
 				} else {
 					return
@@ -46,7 +46,7 @@ func (self *Cache) Write(p av.Packet) {
 			vh, ok := p.Header.(av.VideoPacketHeader)
 			if ok {
 				if vh.IsSeq() {
-					self.videoSeq.Write(p)
+					cache.videoSeq.Write(p)
 					return
 				}
 			} else {
@@ -55,23 +55,23 @@ func (self *Cache) Write(p av.Packet) {
 
 		}
 	}
-	self.gop.Write(p)
+	cache.gop.Write(p)
 }
 
-func (self *Cache) Send(w av.WriteCloser) error {
-	if err := self.metadata.Send(w); err != nil {
+func (cache *Cache) Send(w av.WriteCloser) error {
+	if err := cache.metadata.Send(w); err != nil {
 		return err
 	}
 
-	if err := self.videoSeq.Send(w); err != nil {
+	if err := cache.videoSeq.Send(w); err != nil {
 		return err
 	}
 
-	if err := self.audioSeq.Send(w); err != nil {
+	if err := cache.audioSeq.Send(w); err != nil {
 		return err
 	}
 
-	if err := self.gop.Send(w); err != nil {
+	if err := cache.gop.Send(w); err != nil {
 		return err
 	}
 

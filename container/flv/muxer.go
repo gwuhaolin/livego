@@ -14,10 +14,7 @@ import (
 
 var (
 	flvHeader = []byte{0x46, 0x4c, 0x56, 0x01, 0x05, 0x00, 0x00, 0x00, 0x09}
-)
-
-var (
-	flvFile = flag.String("filFile", "./out.flv", "output flv file name")
+	flvFile   = flag.String("filFile", "./out.flv", "output flv file name")
 )
 
 func NewFlv(handler av.Handler, info av.Info) {
@@ -75,9 +72,9 @@ func NewFLVWriter(app, title, url string, ctx *os.File) *FLVWriter {
 	return ret
 }
 
-func (self *FLVWriter) Write(p av.Packet) error {
-	self.RWBaser.SetPreTime()
-	h := self.buf[:headerLen]
+func (writer *FLVWriter) Write(p av.Packet) error {
+	writer.RWBaser.SetPreTime()
+	h := writer.buf[:headerLen]
 	typeID := av.TAG_VIDEO
 	if !p.IsVideo {
 		if p.IsMetadata {
@@ -93,8 +90,8 @@ func (self *FLVWriter) Write(p av.Packet) error {
 	}
 	dataLen := len(p.Data)
 	timestamp := p.TimeStamp
-	timestamp += self.BaseTimeStamp()
-	self.RWBaser.RecTimeStamp(timestamp, uint32(typeID))
+	timestamp += writer.BaseTimeStamp()
+	writer.RWBaser.RecTimeStamp(timestamp, uint32(typeID))
 
 	preDataLen := dataLen + headerLen
 	timestampbase := timestamp & 0xffffff
@@ -105,37 +102,37 @@ func (self *FLVWriter) Write(p av.Packet) error {
 	pio.PutI24BE(h[4:7], int32(timestampbase))
 	pio.PutU8(h[7:8], uint8(timestampExt))
 
-	if _, err := self.ctx.Write(h); err != nil {
+	if _, err := writer.ctx.Write(h); err != nil {
 		return err
 	}
 
-	if _, err := self.ctx.Write(p.Data); err != nil {
+	if _, err := writer.ctx.Write(p.Data); err != nil {
 		return err
 	}
 
 	pio.PutI32BE(h[:4], int32(preDataLen))
-	if _, err := self.ctx.Write(h[:4]); err != nil {
+	if _, err := writer.ctx.Write(h[:4]); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (self *FLVWriter) Wait() {
+func (writer *FLVWriter) Wait() {
 	select {
-	case <-self.closed:
+	case <-writer.closed:
 		return
 	}
 }
 
-func (self *FLVWriter) Close(error) {
-	self.ctx.Close()
-	close(self.closed)
+func (writer *FLVWriter) Close(error) {
+	writer.ctx.Close()
+	close(writer.closed)
 }
 
-func (self *FLVWriter) Info() (ret av.Info) {
-	ret.UID = self.Uid
-	ret.URL = self.url
-	ret.Key = self.app + "/" + self.title
+func (writer *FLVWriter) Info() (ret av.Info) {
+	ret.UID = writer.Uid
+	ret.URL = writer.url
+	ret.Key = writer.app + "/" + writer.title
 	return
 }

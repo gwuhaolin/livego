@@ -47,45 +47,45 @@ func NewParser() *Parser {
 	}
 }
 
-func (self *Parser) specificInfo(src []byte) error {
+func (parser *Parser) specificInfo(src []byte) error {
 	if len(src) < 2 {
 		return specificBufInvalid
 	}
-	self.gettedSpecific = true
-	self.cfgInfo.objectType = (src[0] >> 3) & 0xff
-	self.cfgInfo.sampleRate = ((src[0] & 0x07) << 1) | src[1]>>7
-	self.cfgInfo.channel = (src[1] >> 3) & 0x0f
+	parser.gettedSpecific = true
+	parser.cfgInfo.objectType = (src[0] >> 3) & 0xff
+	parser.cfgInfo.sampleRate = ((src[0] & 0x07) << 1) | src[1]>>7
+	parser.cfgInfo.channel = (src[1] >> 3) & 0x0f
 	return nil
 }
 
-func (self *Parser) adts(src []byte, w io.Writer) error {
-	if len(src) <= 0 || !self.gettedSpecific {
+func (parser *Parser) adts(src []byte, w io.Writer) error {
+	if len(src) <= 0 || !parser.gettedSpecific {
 		return audioBufInvalid
 	}
 
 	frameLen := uint16(len(src)) + 7
 
 	//first write adts header
-	self.adtsHeader[0] = 0xff
-	self.adtsHeader[1] = 0xf1
+	parser.adtsHeader[0] = 0xff
+	parser.adtsHeader[1] = 0xf1
 
-	self.adtsHeader[2] &= 0x00
-	self.adtsHeader[2] = self.adtsHeader[2] | (self.cfgInfo.objectType-1)<<6
-	self.adtsHeader[2] = self.adtsHeader[2] | (self.cfgInfo.sampleRate)<<2
+	parser.adtsHeader[2] &= 0x00
+	parser.adtsHeader[2] = parser.adtsHeader[2] | (parser.cfgInfo.objectType-1)<<6
+	parser.adtsHeader[2] = parser.adtsHeader[2] | (parser.cfgInfo.sampleRate)<<2
 
-	self.adtsHeader[3] &= 0x00
-	self.adtsHeader[3] = self.adtsHeader[3] | (self.cfgInfo.channel<<2)<<4
-	self.adtsHeader[3] = self.adtsHeader[3] | byte((frameLen<<3)>>14)
+	parser.adtsHeader[3] &= 0x00
+	parser.adtsHeader[3] = parser.adtsHeader[3] | (parser.cfgInfo.channel<<2)<<4
+	parser.adtsHeader[3] = parser.adtsHeader[3] | byte((frameLen<<3)>>14)
 
-	self.adtsHeader[4] &= 0x00
-	self.adtsHeader[4] = self.adtsHeader[4] | byte((frameLen<<5)>>8)
+	parser.adtsHeader[4] &= 0x00
+	parser.adtsHeader[4] = parser.adtsHeader[4] | byte((frameLen<<5)>>8)
 
-	self.adtsHeader[5] &= 0x00
-	self.adtsHeader[5] = self.adtsHeader[5] | byte(((frameLen<<13)>>13)<<5)
-	self.adtsHeader[5] = self.adtsHeader[5] | (0x7C<<1)>>3
-	self.adtsHeader[6] = 0xfc
+	parser.adtsHeader[5] &= 0x00
+	parser.adtsHeader[5] = parser.adtsHeader[5] | byte(((frameLen<<13)>>13)<<5)
+	parser.adtsHeader[5] = parser.adtsHeader[5] | (0x7C<<1)>>3
+	parser.adtsHeader[6] = 0xfc
 
-	if _, err := w.Write(self.adtsHeader[0:]); err != nil {
+	if _, err := w.Write(parser.adtsHeader[0:]); err != nil {
 		return err
 	}
 	if _, err := w.Write(src); err != nil {
@@ -94,20 +94,20 @@ func (self *Parser) adts(src []byte, w io.Writer) error {
 	return nil
 }
 
-func (self *Parser) SampleRate() int {
+func (parser *Parser) SampleRate() int {
 	rate := 44100
-	if self.cfgInfo.sampleRate <= byte(len(aacRates)-1) {
-		rate = aacRates[self.cfgInfo.sampleRate]
+	if parser.cfgInfo.sampleRate <= byte(len(aacRates)-1) {
+		rate = aacRates[parser.cfgInfo.sampleRate]
 	}
 	return rate
 }
 
-func (self *Parser) Parse(b []byte, packetType uint8, w io.Writer) (err error) {
+func (parser *Parser) Parse(b []byte, packetType uint8, w io.Writer) (err error) {
 	switch packetType {
 	case av.AAC_SEQHDR:
-		err = self.specificInfo(b)
+		err = parser.specificInfo(b)
 	case av.AAC_RAW:
-		err = self.adts(b, w)
+		err = parser.adts(b, w)
 	}
 	return
 }

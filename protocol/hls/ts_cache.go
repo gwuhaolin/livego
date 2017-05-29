@@ -18,18 +18,18 @@ func NewTSCache() *TSCache {
 	}
 }
 
-func (self *TSCache) Set(key string, e *TSCacheItem) {
-	v, ok := self.entrys[key]
+func (cache *TSCache) Set(key string, e *TSCacheItem) {
+	v, ok := cache.entrys[key]
 	if !ok {
-		self.entrys[key] = e
+		cache.entrys[key] = e
 	}
 	if v.ID() != e.ID() {
-		self.entrys[key] = e
+		cache.entrys[key] = e
 	}
 }
 
-func (self *TSCache) Get(key string) *TSCacheItem {
-	v := self.entrys[key]
+func (cache *TSCache) Get(key string) *TSCacheItem {
+	v := cache.entrys[key]
 	return v
 }
 
@@ -58,19 +58,19 @@ func NewTSCacheItem(id string) *TSCacheItem {
 	}
 }
 
-func (self *TSCacheItem) ID() string {
-	return self.id
+func (tcCacheItem *TSCacheItem) ID() string {
+	return tcCacheItem.id
 }
 
 // TODO: found data race, fix it
-func (self *TSCacheItem) GenM3U8PlayList() ([]byte, error) {
+func (tcCacheItem *TSCacheItem) GenM3U8PlayList() ([]byte, error) {
 	var seq int
 	var getSeq bool
 	var maxDuration int
 	m3u8body := bytes.NewBuffer(nil)
-	for e := self.ll.Front(); e != nil; e = e.Next() {
+	for e := tcCacheItem.ll.Front(); e != nil; e = e.Next() {
 		key := e.Value.(string)
-		v, ok := self.lm[key]
+		v, ok := tcCacheItem.lm[key]
 		if ok {
 			if v.Duration > maxDuration {
 				maxDuration = v.Duration
@@ -90,19 +90,19 @@ func (self *TSCacheItem) GenM3U8PlayList() ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func (self *TSCacheItem) SetItem(key string, item TSItem) {
-	if self.ll.Len() == self.num {
-		e := self.ll.Front()
-		self.ll.Remove(e)
+func (tcCacheItem *TSCacheItem) SetItem(key string, item TSItem) {
+	if tcCacheItem.ll.Len() == tcCacheItem.num {
+		e := tcCacheItem.ll.Front()
+		tcCacheItem.ll.Remove(e)
 		k := e.Value.(string)
-		delete(self.lm, k)
+		delete(tcCacheItem.lm, k)
 	}
-	self.lm[key] = item
-	self.ll.PushBack(key)
+	tcCacheItem.lm[key] = item
+	tcCacheItem.ll.PushBack(key)
 }
 
-func (self *TSCacheItem) GetItem(key string) (TSItem, error) {
-	item, ok := self.lm[key]
+func (tcCacheItem *TSCacheItem) GetItem(key string) (TSItem, error) {
+	item, ok := tcCacheItem.lm[key]
 	if !ok {
 		return item, ErrNoKey
 	}

@@ -53,24 +53,24 @@ func NewConnClient() *ConnClient {
 	}
 }
 
-func (self *ConnClient) readRespMsg() error {
+func (connClient *ConnClient) readRespMsg() error {
 	var err error
 	var rc ChunkStream
 	for {
-		if err = self.conn.Read(&rc); err != nil {
+		if err = connClient.conn.Read(&rc); err != nil {
 			return err
 		}
 		switch rc.TypeID {
 		case 20, 17:
 			r := bytes.NewReader(rc.Data)
-			vs, err := self.decoder.DecodeBatch(r, amf.AMF0)
+			vs, err := connClient.decoder.DecodeBatch(r, amf.AMF0)
 			if err != nil && err != io.EOF {
 				return err
 			}
 			for k, v := range vs {
 				switch v.(type) {
 				case string:
-					switch self.curcmdName {
+					switch connClient.curcmdName {
 					case cmdConnect, cmdCreateStream:
 						if v.(string) != respResult {
 							return ErrFail
@@ -81,15 +81,15 @@ func (self *ConnClient) readRespMsg() error {
 						}
 					}
 				case float64:
-					switch self.curcmdName {
+					switch connClient.curcmdName {
 					case cmdConnect, cmdCreateStream:
 						id := int(v.(float64))
 						if k == 1 {
-							if id != self.transID {
+							if id != connClient.transID {
 								return ErrFail
 							}
 						} else if k == 3 {
-							self.streamid = uint32(id)
+							connClient.streamid = uint32(id)
 						}
 					case cmdPublish:
 						if int(v.(float64)) != 0 {
@@ -98,7 +98,7 @@ func (self *ConnClient) readRespMsg() error {
 					}
 				case amf.Object:
 					objmap := v.(amf.Object)
-					switch self.curcmdName {
+					switch connClient.curcmdName {
 					case cmdConnect:
 						code, ok := objmap["code"]
 						if ok && code.(string) != connectSuccess {
@@ -117,83 +117,83 @@ func (self *ConnClient) readRespMsg() error {
 	}
 }
 
-func (self *ConnClient) writeMsg(args ...interface{}) error {
-	self.bytesw.Reset()
+func (connClient *ConnClient) writeMsg(args ...interface{}) error {
+	connClient.bytesw.Reset()
 	for _, v := range args {
-		if _, err := self.encoder.Encode(self.bytesw, v, amf.AMF0); err != nil {
+		if _, err := connClient.encoder.Encode(connClient.bytesw, v, amf.AMF0); err != nil {
 			return err
 		}
 	}
-	msg := self.bytesw.Bytes()
+	msg := connClient.bytesw.Bytes()
 	c := ChunkStream{
 		Format:    0,
 		CSID:      3,
 		Timestamp: 0,
 		TypeID:    20,
-		StreamID:  self.streamid,
+		StreamID:  connClient.streamid,
 		Length:    uint32(len(msg)),
 		Data:      msg,
 	}
-	self.conn.Write(&c)
-	return self.conn.Flush()
+	connClient.conn.Write(&c)
+	return connClient.conn.Flush()
 }
 
-func (self *ConnClient) writeConnectMsg() error {
+func (connClient *ConnClient) writeConnectMsg() error {
 	event := make(amf.Object)
-	event["app"] = self.app
+	event["app"] = connClient.app
 	event["type"] = "nonprivate"
 	event["flashVer"] = "FMS.3.1"
-	event["tcUrl"] = self.tcurl
-	self.curcmdName = cmdConnect
+	event["tcUrl"] = connClient.tcurl
+	connClient.curcmdName = cmdConnect
 
-	if err := self.writeMsg(cmdConnect, self.transID, event); err != nil {
+	if err := connClient.writeMsg(cmdConnect, connClient.transID, event); err != nil {
 		return err
 	}
-	return self.readRespMsg()
+	return connClient.readRespMsg()
 }
 
-func (self *ConnClient) writeCreateStreamMsg() error {
-	self.transID++
-	self.curcmdName = cmdCreateStream
-	if err := self.writeMsg(cmdCreateStream, self.transID, nil); err != nil {
+func (connClient *ConnClient) writeCreateStreamMsg() error {
+	connClient.transID++
+	connClient.curcmdName = cmdCreateStream
+	if err := connClient.writeMsg(cmdCreateStream, connClient.transID, nil); err != nil {
 		return err
 	}
-	return self.readRespMsg()
+	return connClient.readRespMsg()
 }
 
-func (self *ConnClient) writePublishMsg() error {
-	self.transID++
-	self.curcmdName = cmdPublish
-	if err := self.writeMsg(cmdPublish, self.transID, nil, self.title, publishLive); err != nil {
+func (connClient *ConnClient) writePublishMsg() error {
+	connClient.transID++
+	connClient.curcmdName = cmdPublish
+	if err := connClient.writeMsg(cmdPublish, connClient.transID, nil, connClient.title, publishLive); err != nil {
 		return err
 	}
-	return self.readRespMsg()
+	return connClient.readRespMsg()
 }
 
-func (self *ConnClient) writePlayMsg() error {
-	self.transID++
-	self.curcmdName = cmdPlay
-	if err := self.writeMsg(cmdPlay, 0, nil, self.title); err != nil {
+func (connClient *ConnClient) writePlayMsg() error {
+	connClient.transID++
+	connClient.curcmdName = cmdPlay
+	if err := connClient.writeMsg(cmdPlay, 0, nil, connClient.title); err != nil {
 		return err
 	}
-	return self.readRespMsg()
+	return connClient.readRespMsg()
 }
 
-func (self *ConnClient) Start(url string, method string) error {
+func (connClient *ConnClient) Start(url string, method string) error {
 	u, err := neturl.Parse(url)
 	if err != nil {
 		return err
 	}
-	self.url = url
+	connClient.url = url
 	path := strings.TrimLeft(u.Path, "/")
 	ps := strings.SplitN(path, "/", 2)
 	if len(ps) != 2 {
 		return fmt.Errorf("u path err: %s", path)
 	}
-	self.app = ps[0]
-	self.title = ps[1]
-	self.query = u.RawQuery
-	self.tcurl = "rtmp://" + u.Host + "/" + self.app
+	connClient.app = ps[0]
+	connClient.title = ps[1]
+	connClient.query = u.RawQuery
+	connClient.tcurl = "rtmp://" + u.Host + "/" + connClient.app
 	port := ":1935"
 	host := u.Host
 	localIP := ":0"
@@ -235,22 +235,22 @@ func (self *ConnClient) Start(url string, method string) error {
 
 	log.Println("connection:", "local:", conn.LocalAddr(), "remote:", conn.RemoteAddr())
 
-	self.conn = NewConn(conn, 4*1024)
-	if err := self.conn.HandshakeClient(); err != nil {
+	connClient.conn = NewConn(conn, 4*1024)
+	if err := connClient.conn.HandshakeClient(); err != nil {
 		return err
 	}
-	if err := self.writeConnectMsg(); err != nil {
+	if err := connClient.writeConnectMsg(); err != nil {
 		return err
 	}
-	if err := self.writeCreateStreamMsg(); err != nil {
+	if err := connClient.writeCreateStreamMsg(); err != nil {
 		return err
 	}
 	if method == av.PUBLISH {
-		if err := self.writePublishMsg(); err != nil {
+		if err := connClient.writePublishMsg(); err != nil {
 			return err
 		}
 	} else if method == av.PLAY {
-		if err := self.writePlayMsg(); err != nil {
+		if err := connClient.writePlayMsg(); err != nil {
 			return err
 		}
 	}
@@ -258,7 +258,7 @@ func (self *ConnClient) Start(url string, method string) error {
 	return nil
 }
 
-func (self *ConnClient) Write(c ChunkStream) error {
+func (connClient *ConnClient) Write(c ChunkStream) error {
 	if c.TypeID == av.TAG_SCRIPTDATAAMF0 ||
 		c.TypeID == av.TAG_SCRIPTDATAAMF3 {
 		var err error
@@ -267,20 +267,20 @@ func (self *ConnClient) Write(c ChunkStream) error {
 		}
 		c.Length = uint32(len(c.Data))
 	}
-	return self.conn.Write(&c)
+	return connClient.conn.Write(&c)
 }
 
-func (self *ConnClient) Read(c *ChunkStream) (err error) {
-	return self.conn.Read(c)
+func (connClient *ConnClient) Read(c *ChunkStream) (err error) {
+	return connClient.conn.Read(c)
 }
 
-func (self *ConnClient) GetInfo() (app string, name string, url string) {
-	app = self.app
-	name = self.title
-	url = self.url
+func (connClient *ConnClient) GetInfo() (app string, name string, url string) {
+	app = connClient.app
+	name = connClient.title
+	url = connClient.url
 	return
 }
 
-func (self *ConnClient) Close(err error) {
-	self.conn.Close()
+func (connClient *ConnClient) Close(err error) {
+	connClient.conn.Close()
 }

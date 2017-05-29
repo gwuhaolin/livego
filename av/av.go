@@ -129,13 +129,13 @@ type Info struct {
 	Inter bool
 }
 
-func (self Info) IsInterval() bool {
-	return self.Inter
+func (info Info) IsInterval() bool {
+	return info.Inter
 }
 
-func (i Info) String() string {
+func (info Info) String() string {
 	return fmt.Sprintf("<key: %s, URL: %s, UID: %s, Inter: %v>",
-		i.Key, i.URL, i.UID, i.Inter)
+		info.Key, info.URL, info.UID, info.Inter)
 }
 
 type ReadCloser interface {

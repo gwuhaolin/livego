@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"testing"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/gwuhaolin/livego/utils/pool"
 )

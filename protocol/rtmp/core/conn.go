@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"net"
 	"time"
-
 	"github.com/gwuhaolin/livego/utils/pool"
 	"github.com/gwuhaolin/livego/utils/pio"
 )
@@ -45,103 +44,103 @@ func NewConn(c net.Conn, bufferSize int) *Conn {
 	}
 }
 
-func (self *Conn) Read(c *ChunkStream) error {
+func (conn *Conn) Read(c *ChunkStream) error {
 	for {
-		h, _ := self.rw.ReadUintBE(1)
+		h, _ := conn.rw.ReadUintBE(1)
 		// if err != nil {
 		// 	log.Println("read from conn error: ", err)
 		// 	return err
 		// }
 		format := h >> 6
 		csid := h & 0x3f
-		cs, ok := self.chunks[csid]
+		cs, ok := conn.chunks[csid]
 		if !ok {
 			cs = ChunkStream{}
-			self.chunks[csid] = cs
+			conn.chunks[csid] = cs
 		}
 		cs.tmpFromat = format
 		cs.CSID = csid
-		err := cs.readChunk(self.rw, self.remoteChunkSize, self.pool)
+		err := cs.readChunk(conn.rw, conn.remoteChunkSize, conn.pool)
 		if err != nil {
 			return err
 		}
-		self.chunks[csid] = cs
+		conn.chunks[csid] = cs
 		if cs.full() {
 			*c = cs
 			break
 		}
 	}
 
-	self.handleControlMsg(c)
+	conn.handleControlMsg(c)
 
-	self.ack(c.Length)
+	conn.ack(c.Length)
 
 	return nil
 }
 
-func (self *Conn) Write(c *ChunkStream) error {
+func (conn *Conn) Write(c *ChunkStream) error {
 	if c.TypeID == idSetChunkSize {
-		self.chunkSize = binary.BigEndian.Uint32(c.Data)
+		conn.chunkSize = binary.BigEndian.Uint32(c.Data)
 	}
-	return c.writeChunk(self.rw, int(self.chunkSize))
+	return c.writeChunk(conn.rw, int(conn.chunkSize))
 }
 
-func (self *Conn) Flush() error {
-	return self.rw.Flush()
+func (conn *Conn) Flush() error {
+	return conn.rw.Flush()
 }
 
-func (self *Conn) Close() error {
-	return self.Conn.Close()
+func (conn *Conn) Close() error {
+	return conn.Conn.Close()
 }
 
-func (self *Conn) RemoteAddr() net.Addr {
-	return self.Conn.RemoteAddr()
+func (conn *Conn) RemoteAddr() net.Addr {
+	return conn.Conn.RemoteAddr()
 }
 
-func (self *Conn) LocalAddr() net.Addr {
-	return self.Conn.LocalAddr()
+func (conn *Conn) LocalAddr() net.Addr {
+	return conn.Conn.LocalAddr()
 }
 
-func (self *Conn) SetDeadline(t time.Time) error {
-	return self.Conn.SetDeadline(t)
+func (conn *Conn) SetDeadline(t time.Time) error {
+	return conn.Conn.SetDeadline(t)
 }
 
-func (self *Conn) NewAck(size uint32) ChunkStream {
+func (conn *Conn) NewAck(size uint32) ChunkStream {
 	return initControlMsg(idAck, 4, size)
 }
 
-func (self *Conn) NewSetChunkSize(size uint32) ChunkStream {
+func (conn *Conn) NewSetChunkSize(size uint32) ChunkStream {
 	return initControlMsg(idSetChunkSize, 4, size)
 }
 
-func (self *Conn) NewWindowAckSize(size uint32) ChunkStream {
+func (conn *Conn) NewWindowAckSize(size uint32) ChunkStream {
 	return initControlMsg(idWindowAckSize, 4, size)
 }
 
-func (self *Conn) NewSetPeerBandwidth(size uint32) ChunkStream {
+func (conn *Conn) NewSetPeerBandwidth(size uint32) ChunkStream {
 	ret := initControlMsg(idSetPeerBandwidth, 5, size)
 	ret.Data[4] = 2
 	return ret
 }
 
-func (self *Conn) handleControlMsg(c *ChunkStream) {
+func (conn *Conn) handleControlMsg(c *ChunkStream) {
 	if c.TypeID == idSetChunkSize {
-		self.remoteChunkSize = binary.BigEndian.Uint32(c.Data)
+		conn.remoteChunkSize = binary.BigEndian.Uint32(c.Data)
 	} else if c.TypeID == idWindowAckSize {
-		self.remoteWindowAckSize = binary.BigEndian.Uint32(c.Data)
+		conn.remoteWindowAckSize = binary.BigEndian.Uint32(c.Data)
 	}
 }
 
-func (self *Conn) ack(size uint32) {
-	self.received += uint32(size)
-	self.ackReceived += uint32(size)
-	if self.received >= 0xf0000000 {
-		self.received = 0
+func (conn *Conn) ack(size uint32) {
+	conn.received += uint32(size)
+	conn.ackReceived += uint32(size)
+	if conn.received >= 0xf0000000 {
+		conn.received = 0
 	}
-	if self.ackReceived >= self.remoteWindowAckSize {
-		cs := self.NewAck(self.ackReceived)
-		cs.writeChunk(self.rw, int(self.chunkSize))
-		self.ackReceived = 0
+	if conn.ackReceived >= conn.remoteWindowAckSize {
+		cs := conn.NewAck(conn.ackReceived)
+		cs.writeChunk(conn.rw, int(conn.chunkSize))
+		conn.ackReceived = 0
 	}
 }
 
@@ -174,7 +173,7 @@ const (
    +------------------------------+-------------------------
    Pay load for the ‘User Control Message’.
 */
-func (self *Conn) userControlMsg(eventType, buflen uint32) ChunkStream {
+func (conn *Conn) userControlMsg(eventType, buflen uint32) ChunkStream {
 	var ret ChunkStream
 	buflen += 2
 	ret = ChunkStream{
@@ -190,18 +189,18 @@ func (self *Conn) userControlMsg(eventType, buflen uint32) ChunkStream {
 	return ret
 }
 
-func (self *Conn) SetBegin() {
-	ret := self.userControlMsg(streamBegin, 4)
+func (conn *Conn) SetBegin() {
+	ret := conn.userControlMsg(streamBegin, 4)
 	for i := 0; i < 4; i++ {
 		ret.Data[2+i] = byte(1 >> uint32((3-i)*8) & 0xff)
 	}
-	self.Write(&ret)
+	conn.Write(&ret)
 }
 
-func (self *Conn) SetRecorded() {
-	ret := self.userControlMsg(streamIsRecorded, 4)
+func (conn *Conn) SetRecorded() {
+	ret := conn.userControlMsg(streamIsRecorded, 4)
 	for i := 0; i < 4; i++ {
 		ret.Data[2+i] = byte(1 >> uint32((3-i)*8) & 0xff)
 	}
-	self.Write(&ret)
+	conn.Write(&ret)
 }

@@ -70,7 +70,7 @@ func GenCrc32(src []byte) uint32 {
 	j := byte(0)
 	crc32 := uint32(0xFFFFFFFF)
 	for i := 0; i < len(src); i++ {
-		j = ((byte(crc32>>24) ^ src[i]) & 0xff)
+		j = (byte(crc32>>24) ^ src[i]) & 0xff
 		crc32 = uint32(uint32(crc32<<8) ^ uint32(crcTable[j]))
 	}
 

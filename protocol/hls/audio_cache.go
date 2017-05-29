@@ -21,24 +21,24 @@ func newAudioCache() *audioCache {
 	}
 }
 
-func (self *audioCache) Cache(src []byte, pts uint64) bool {
-	if self.num == 0 {
-		self.offset = 0
-		self.pts = pts
-		self.buf.Reset()
+func (a *audioCache) Cache(src []byte, pts uint64) bool {
+	if a.num == 0 {
+		a.offset = 0
+		a.pts = pts
+		a.buf.Reset()
 	}
-	self.buf.Write(src)
-	self.offset += len(src)
-	self.num++
+	a.buf.Write(src)
+	a.offset += len(src)
+	a.num++
 
 	return false
 }
 
-func (self *audioCache) GetFrame() (int, uint64, []byte) {
-	self.num = 0
-	return self.offset, self.pts, self.buf.Bytes()
+func (a *audioCache) GetFrame() (int, uint64, []byte) {
+	a.num = 0
+	return a.offset, a.pts, a.buf.Bytes()
 }
 
-func (self *audioCache) CacheNum() byte {
-	return self.num
+func (a *audioCache) CacheNum() byte {
+	return a.num
 }

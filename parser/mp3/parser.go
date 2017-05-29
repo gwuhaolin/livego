@@ -21,21 +21,21 @@ var (
 	errIndexInvalid   = errors.New("invalid rate index")
 )
 
-func (self *Parser) Parse(src []byte) error {
+func (parser *Parser) Parse(src []byte) error {
 	if len(src) < 3 {
 		return errMp3DataInvalid
 	}
 	index := (src[2] >> 2) & 0x3
 	if index <= byte(len(mp3Rates)-1) {
-		self.samplingFrequency = mp3Rates[index]
+		parser.samplingFrequency = mp3Rates[index]
 		return nil
 	}
 	return errIndexInvalid
 }
 
-func (self *Parser) SampleRate() int {
-	if self.samplingFrequency == 0 {
-		self.samplingFrequency = 44100
+func (parser *Parser) SampleRate() int {
+	if parser.samplingFrequency == 0 {
+		parser.samplingFrequency = 44100
 	}
-	return self.samplingFrequency
+	return parser.samplingFrequency
 }

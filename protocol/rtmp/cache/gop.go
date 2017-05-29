@@ -2,7 +2,6 @@ package cache
 
 import (
 	"errors"
-
 	"github.com/gwuhaolin/livego/av"
 )
 
@@ -24,24 +23,24 @@ func newArray() *array {
 	return ret
 }
 
-func (self *array) reset() {
-	self.index = 0
-	self.packets = self.packets[:0]
+func (array *array) reset() {
+	array.index = 0
+	array.packets = array.packets[:0]
 }
 
-func (self *array) write(packet av.Packet) error {
-	if self.index >= maxGOPCap {
+func (array *array) write(packet av.Packet) error {
+	if array.index >= maxGOPCap {
 		return ErrGopTooBig
 	}
-	self.packets = append(self.packets, packet)
-	self.index++
+	array.packets = append(array.packets, packet)
+	array.index++
 	return nil
 }
 
-func (self *array) send(w av.WriteCloser) error {
+func (array *array) send(w av.WriteCloser) error {
 	var err error
-	for i := 0; i < self.index; i++ {
-		packet := self.packets[i]
+	for i := 0; i < array.index; i++ {
+		packet := array.packets[i]
 		if err = w.Write(packet); err != nil {
 			return err
 		}
@@ -64,27 +63,27 @@ func NewGopCache(num int) *GopCache {
 	}
 }
 
-func (self *GopCache) writeToArray(chunk av.Packet, startNew bool) error {
+func (gopCache *GopCache) writeToArray(chunk av.Packet, startNew bool) error {
 	var ginc *array
 	if startNew {
-		ginc = self.gops[self.nextindex]
+		ginc = gopCache.gops[gopCache.nextindex]
 		if ginc == nil {
 			ginc = newArray()
-			self.num++
-			self.gops[self.nextindex] = ginc
+			gopCache.num++
+			gopCache.gops[gopCache.nextindex] = ginc
 		} else {
 			ginc.reset()
 		}
-		self.nextindex = (self.nextindex + 1) % self.count
+		gopCache.nextindex = (gopCache.nextindex + 1) % gopCache.count
 	} else {
-		ginc = self.gops[(self.nextindex+1)%self.count]
+		ginc = gopCache.gops[(gopCache.nextindex+1)%gopCache.count]
 	}
 	ginc.write(chunk)
 
 	return nil
 }
 
-func (self *GopCache) Write(p av.Packet) {
+func (gopCache *GopCache) Write(p av.Packet) {
 	var ok bool
 	if p.IsVideo {
 		vh := p.Header.(av.VideoPacketHeader)
@@ -92,21 +91,21 @@ func (self *GopCache) Write(p av.Packet) {
 			ok = true
 		}
 	}
-	if ok || self.start {
-		self.start = true
-		self.writeToArray(p, ok)
+	if ok || gopCache.start {
+		gopCache.start = true
+		gopCache.writeToArray(p, ok)
 	}
 }
 
-func (self *GopCache) sendTo(w av.WriteCloser) error {
+func (gopCache *GopCache) sendTo(w av.WriteCloser) error {
 	var err error
-	pos := (self.nextindex + 1) % self.count
-	for i := 0; i < self.num; i++ {
-		index := (pos - self.num + 1) + i
+	pos := (gopCache.nextindex + 1) % gopCache.count
+	for i := 0; i < gopCache.num; i++ {
+		index := (pos - gopCache.num + 1) + i
 		if index < 0 {
-			index += self.count
+			index += gopCache.count
 		}
-		g := self.gops[index]
+		g := gopCache.gops[index]
 		err = g.send(w)
 		if err != nil {
 			return err
@@ -115,6 +114,6 @@ func (self *GopCache) sendTo(w av.WriteCloser) error {
 	return nil
 }
 
-func (self *GopCache) Send(w av.WriteCloser) error {
-	return self.sendTo(w)
+func (gopCache *GopCache) Send(w av.WriteCloser) error {
+	return gopCache.sendTo(w)
 }

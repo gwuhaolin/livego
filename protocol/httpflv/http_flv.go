@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
 	"errors"
-
 	"github.com/gwuhaolin/livego/utils/uid"
 	"github.com/gwuhaolin/livego/protocol/amf"
 	"github.com/gwuhaolin/livego/av"

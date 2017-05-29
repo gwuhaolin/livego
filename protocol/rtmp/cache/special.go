@@ -33,14 +33,14 @@ func NewSpecialCache() *SpecialCache {
 	return &SpecialCache{}
 }
 
-func (self *SpecialCache) Write(p av.Packet) {
-	self.p = p
-	self.full = true
+func (specialCache *SpecialCache) Write(p av.Packet) {
+	specialCache.p = p
+	specialCache.full = true
 }
 
-func (self *SpecialCache) Send(w av.WriteCloser) error {
-	if !self.full {
+func (specialCache *SpecialCache) Send(w av.WriteCloser) error {
+	if !specialCache.full {
 		return nil
 	}
-	return w.Write(self.p)
+	return w.Write(specialCache.p)
 }

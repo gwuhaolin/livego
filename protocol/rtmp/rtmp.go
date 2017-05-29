@@ -3,20 +3,15 @@ package rtmp
 import (
 	"net"
 	"time"
-
 	"net/url"
-
 	"strings"
-
 	"errors"
-
 	"flag"
-
+	"log"
 	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/utils/uid"
 	"github.com/gwuhaolin/livego/container/flv"
 	"github.com/gwuhaolin/livego/protocol/rtmp/core"
-	"log"
 )
 
 const (
@@ -40,27 +35,27 @@ func NewRtmpClient(h av.Handler, getter av.GetWriter) *Client {
 	}
 }
 
-func (self *Client) Dial(url string, method string) error {
+func (c *Client) Dial(url string, method string) error {
 	connClient := core.NewConnClient()
 	if err := connClient.Start(url, method); err != nil {
 		return err
 	}
 	if method == av.PUBLISH {
 		writer := NewVirWriter(connClient)
-		self.handler.HandleWriter(writer)
+		c.handler.HandleWriter(writer)
 	} else if method == av.PLAY {
 		reader := NewVirReader(connClient)
-		self.handler.HandleReader(reader)
-		if self.getter != nil {
-			writer := self.getter.GetWriter(reader.Info())
-			self.handler.HandleWriter(writer)
+		c.handler.HandleReader(reader)
+		if c.getter != nil {
+			writer := c.getter.GetWriter(reader.Info())
+			c.handler.HandleWriter(writer)
 		}
 	}
 	return nil
 }
 
-func (self *Client) GetHandle() av.Handler {
-	return self.handler
+func (c *Client) GetHandle() av.Handler {
+	return c.handler
 }
 
 type Server struct {
@@ -75,7 +70,7 @@ func NewRtmpServer(h av.Handler, getter av.GetWriter) *Server {
 	}
 }
 
-func (self *Server) Serve(listener net.Listener) (err error) {
+func (s *Server) Serve(listener net.Listener) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("rtmp serve panic: ", r)
@@ -91,11 +86,11 @@ func (self *Server) Serve(listener net.Listener) (err error) {
 		conn := core.NewConn(netconn, 4*1024)
 		log.Println("new client, connect remote:", conn.RemoteAddr().String(),
 			"local:", conn.LocalAddr().String())
-		go self.handleConn(conn)
+		go s.handleConn(conn)
 	}
 }
 
-func (self *Server) handleConn(conn *core.Conn) error {
+func (s *Server) handleConn(conn *core.Conn) error {
 	if err := conn.HandshakeServer(); err != nil {
 		conn.Close()
 		log.Println("handleConn HandshakeServer err:", err)
@@ -110,17 +105,17 @@ func (self *Server) handleConn(conn *core.Conn) error {
 	}
 	if connServer.IsPublisher() {
 		reader := NewVirReader(connServer)
-		self.handler.HandleReader(reader)
+		s.handler.HandleReader(reader)
 		log.Printf("new publisher: %+v", reader.Info())
 
-		if self.getter != nil {
-			writer := self.getter.GetWriter(reader.Info())
-			self.handler.HandleWriter(writer)
+		if s.getter != nil {
+			writer := s.getter.GetWriter(reader.Info())
+			s.handler.HandleWriter(writer)
 		}
 	} else {
 		writer := NewVirWriter(connServer)
 		log.Printf("new player: %+v", writer.Info())
-		self.handler.HandleWriter(writer)
+		s.handler.HandleWriter(writer)
 	}
 
 	return nil
@@ -162,17 +157,17 @@ func NewVirWriter(conn StreamReadWriteCloser) *VirWriter {
 	return ret
 }
 
-func (self *VirWriter) Check() {
+func (v *VirWriter) Check() {
 	var c core.ChunkStream
 	for {
-		if err := self.conn.Read(&c); err != nil {
-			self.Close(err)
+		if err := v.conn.Read(&c); err != nil {
+			v.Close(err)
 			return
 		}
 	}
 }
 
-func (self *VirWriter) DropPacket(pktQue chan av.Packet, info av.Info) {
+func (v *VirWriter) DropPacket(pktQue chan av.Packet, info av.Info) {
 	log.Printf("[%v] packet queue max!!!", info)
 	for i := 0; i < maxQueueNum-84; i++ {
 		tmpPkt, ok := <-pktQue
@@ -204,12 +199,12 @@ func (self *VirWriter) DropPacket(pktQue chan av.Packet, info av.Info) {
 }
 
 //
-func (self *VirWriter) Write(p av.Packet) error {
-	if !self.closed {
-		if len(self.packetQueue) >= maxQueueNum-24 {
-			self.DropPacket(self.packetQueue, self.Info())
+func (v *VirWriter) Write(p av.Packet) error {
+	if !v.closed {
+		if len(v.packetQueue) >= maxQueueNum-24 {
+			v.DropPacket(v.packetQueue, v.Info())
 		} else {
-			self.packetQueue <- p
+			v.packetQueue <- p
 		}
 		return nil
 	} else {
@@ -217,16 +212,16 @@ func (self *VirWriter) Write(p av.Packet) error {
 	}
 }
 
-func (self *VirWriter) SendPacket() error {
+func (v *VirWriter) SendPacket() error {
 	var cs core.ChunkStream
 	for {
-		p, ok := <-self.packetQueue
+		p, ok := <-v.packetQueue
 		if ok {
 			cs.Data = p.Data
 			cs.Length = uint32(len(p.Data))
 			cs.StreamID = 1
 			cs.Timestamp = p.TimeStamp
-			cs.Timestamp += self.BaseTimeStamp()
+			cs.Timestamp += v.BaseTimeStamp()
 
 			if p.IsVideo {
 				cs.TypeID = av.TAG_VIDEO
@@ -238,11 +233,11 @@ func (self *VirWriter) SendPacket() error {
 				}
 			}
 
-			self.SetPreTime()
-			self.RecTimeStamp(cs.Timestamp, cs.TypeID)
-			err := self.conn.Write(cs)
+			v.SetPreTime()
+			v.RecTimeStamp(cs.Timestamp, cs.TypeID)
+			err := v.conn.Write(cs)
 			if err != nil {
-				self.closed = true
+				v.closed = true
 				return err
 			}
 		} else {
@@ -253,9 +248,9 @@ func (self *VirWriter) SendPacket() error {
 	return nil
 }
 
-func (self *VirWriter) Info() (ret av.Info) {
-	ret.UID = self.Uid
-	_, _, URL := self.conn.GetInfo()
+func (v *VirWriter) Info() (ret av.Info) {
+	ret.UID = v.Uid
+	_, _, URL := v.conn.GetInfo()
 	ret.URL = URL
 	_url, err := url.Parse(URL)
 	if err != nil {
@@ -266,13 +261,13 @@ func (self *VirWriter) Info() (ret av.Info) {
 	return
 }
 
-func (self *VirWriter) Close(err error) {
-	log.Println("player ", self.Info(), "closed: "+err.Error())
-	if !self.closed {
-		close(self.packetQueue)
+func (v *VirWriter) Close(err error) {
+	log.Println("player ", v.Info(), "closed: "+err.Error())
+	if !v.closed {
+		close(v.packetQueue)
 	}
-	self.closed = true
-	self.conn.Close(err)
+	v.closed = true
+	v.conn.Close(err)
 }
 
 type VirReader struct {
@@ -291,17 +286,17 @@ func NewVirReader(conn StreamReadWriteCloser) *VirReader {
 	}
 }
 
-func (self *VirReader) Read(p *av.Packet) (err error) {
+func (v *VirReader) Read(p *av.Packet) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("rtmp read packet panic: ", r)
 		}
 	}()
 
-	self.SetPreTime()
+	v.SetPreTime()
 	var cs core.ChunkStream
 	for {
-		err = self.conn.Read(&cs)
+		err = v.conn.Read(&cs)
 		if err != nil {
 			return err
 		}
@@ -315,16 +310,16 @@ func (self *VirReader) Read(p *av.Packet) (err error) {
 
 	p.IsAudio = cs.TypeID == av.TAG_AUDIO
 	p.IsVideo = cs.TypeID == av.TAG_VIDEO
-	p.IsMetadata = (cs.TypeID == av.TAG_SCRIPTDATAAMF0 || cs.TypeID == av.TAG_SCRIPTDATAAMF3)
+	p.IsMetadata = cs.TypeID == av.TAG_SCRIPTDATAAMF0 || cs.TypeID == av.TAG_SCRIPTDATAAMF3
 	p.Data = cs.Data
 	p.TimeStamp = cs.Timestamp
-	self.demuxer.DemuxH(p)
+	v.demuxer.DemuxH(p)
 	return err
 }
 
-func (self *VirReader) Info() (ret av.Info) {
-	ret.UID = self.Uid
-	_, _, URL := self.conn.GetInfo()
+func (v *VirReader) Info() (ret av.Info) {
+	ret.UID = v.Uid
+	_, _, URL := v.conn.GetInfo()
 	ret.URL = URL
 	_url, err := url.Parse(URL)
 	if err != nil {
@@ -334,7 +329,7 @@ func (self *VirReader) Info() (ret av.Info) {
 	return
 }
 
-func (self *VirReader) Close(err error) {
-	log.Println("publisher ", self.Info(), "closed: "+err.Error())
-	self.conn.Close(err)
+func (v *VirReader) Close(err error) {
+	log.Println("publisher ", v.Info(), "closed: "+err.Error())
+	v.conn.Close(err)
 }

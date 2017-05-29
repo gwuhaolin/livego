@@ -3,11 +3,10 @@ package rtmp
 import (
 	"errors"
 	"time"
-
+	"log"
 	"github.com/gwuhaolin/livego/utils/cmap"
 	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/protocol/rtmp/cache"
-	"log"
 )
 
 var (

@@ -97,7 +97,7 @@ func hsCreate2(p []byte, key []byte) {
 	copy(p[gap:], digest)
 }
 
-func (self *Conn) HandshakeClient() (err error) {
+func (conn *Conn) HandshakeClient() (err error) {
 	var random [(1 + 1536*2) * 2]byte
 
 	C0C1C2 := random[:1536*2+1]
@@ -109,18 +109,18 @@ func (self *Conn) HandshakeClient() (err error) {
 
 	C0[0] = 3
 	// > C0C1
-	self.Conn.SetDeadline(time.Now().Add(timeout))
-	if _, err = self.rw.Write(C0C1); err != nil {
+	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	if _, err = conn.rw.Write(C0C1); err != nil {
 		return
 	}
-	self.Conn.SetDeadline(time.Now().Add(timeout))
-	if err = self.rw.Flush(); err != nil {
+	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	if err = conn.rw.Flush(); err != nil {
 		return
 	}
 
 	// < S0S1S2
-	self.Conn.SetDeadline(time.Now().Add(timeout))
-	if _, err = io.ReadFull(self.rw, S0S1S2); err != nil {
+	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	if _, err = io.ReadFull(conn.rw, S0S1S2); err != nil {
 		return
 	}
 
@@ -132,15 +132,15 @@ func (self *Conn) HandshakeClient() (err error) {
 	}
 
 	// > C2
-	self.Conn.SetDeadline(time.Now().Add(timeout))
-	if _, err = self.rw.Write(C2); err != nil {
+	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	if _, err = conn.rw.Write(C2); err != nil {
 		return
 	}
-	self.Conn.SetDeadline(time.Time{})
+	conn.Conn.SetDeadline(time.Time{})
 	return
 }
 
-func (self *Conn) HandshakeServer() (err error) {
+func (conn *Conn) HandshakeServer() (err error) {
 	var random [(1 + 1536*2) * 2]byte
 
 	C0C1C2 := random[:1536*2+1]
@@ -156,11 +156,11 @@ func (self *Conn) HandshakeServer() (err error) {
 	S2 := S0S1S2[1536+1:]
 
 	// < C0C1
-	self.Conn.SetDeadline(time.Now().Add(timeout))
-	if _, err = io.ReadFull(self.rw, C0C1); err != nil {
+	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	if _, err = io.ReadFull(conn.rw, C0C1); err != nil {
 		return
 	}
-	self.Conn.SetDeadline(time.Now().Add(timeout))
+	conn.Conn.SetDeadline(time.Now().Add(timeout))
 	if C0[0] != 3 {
 		err = fmt.Errorf("rtmp: handshake version=%d invalid", C0[0])
 		return
@@ -188,20 +188,20 @@ func (self *Conn) HandshakeServer() (err error) {
 	}
 
 	// > S0S1S2
-	self.Conn.SetDeadline(time.Now().Add(timeout))
-	if _, err = self.rw.Write(S0S1S2); err != nil {
+	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	if _, err = conn.rw.Write(S0S1S2); err != nil {
 		return
 	}
-	self.Conn.SetDeadline(time.Now().Add(timeout))
-	if err = self.rw.Flush(); err != nil {
+	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	if err = conn.rw.Flush(); err != nil {
 		return
 	}
 
 	// < C2
-	self.Conn.SetDeadline(time.Now().Add(timeout))
-	if _, err = io.ReadFull(self.rw, C2); err != nil {
+	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	if _, err = io.ReadFull(conn.rw, C2); err != nil {
 		return
 	}
-	self.Conn.SetDeadline(time.Time{})
+	conn.Conn.SetDeadline(time.Time{})
 	return
 }

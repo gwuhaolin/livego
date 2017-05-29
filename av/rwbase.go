@@ -19,35 +19,35 @@ func NewRWBaser(duration time.Duration) RWBaser {
 	}
 }
 
-func (self *RWBaser) BaseTimeStamp() uint32 {
-	return self.BaseTimestamp
+func (rw *RWBaser) BaseTimeStamp() uint32 {
+	return rw.BaseTimestamp
 }
 
-func (self *RWBaser) CalcBaseTimestamp() {
-	if self.LastAudioTimestamp > self.LastVideoTimestamp {
-		self.BaseTimestamp = self.LastAudioTimestamp
+func (rw *RWBaser) CalcBaseTimestamp() {
+	if rw.LastAudioTimestamp > rw.LastVideoTimestamp {
+		rw.BaseTimestamp = rw.LastAudioTimestamp
 	} else {
-		self.BaseTimestamp = self.LastVideoTimestamp
+		rw.BaseTimestamp = rw.LastVideoTimestamp
 	}
 }
 
-func (self *RWBaser) RecTimeStamp(timestamp, typeID uint32) {
+func (rw *RWBaser) RecTimeStamp(timestamp, typeID uint32) {
 	if typeID == TAG_VIDEO {
-		self.LastVideoTimestamp = timestamp
+		rw.LastVideoTimestamp = timestamp
 	} else if typeID == TAG_AUDIO {
-		self.LastAudioTimestamp = timestamp
+		rw.LastAudioTimestamp = timestamp
 	}
 }
 
-func (self *RWBaser) SetPreTime() {
-	self.lock.Lock()
-	self.PreTime = time.Now()
-	self.lock.Unlock()
+func (rw *RWBaser) SetPreTime() {
+	rw.lock.Lock()
+	rw.PreTime = time.Now()
+	rw.lock.Unlock()
 }
 
-func (self *RWBaser) Alive() bool {
-	self.lock.Lock()
-	b := !(time.Now().Sub(self.PreTime) >= self.timeout)
-	self.lock.Unlock()
+func (rw *RWBaser) Alive() bool {
+	rw.lock.Lock()
+	b := !(time.Now().Sub(rw.PreTime) >= rw.timeout)
+	rw.lock.Unlock()
 	return b
 }

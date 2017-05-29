@@ -16,7 +16,7 @@ func NewDemuxer() *Demuxer {
 	return &Demuxer{}
 }
 
-func (self *Demuxer) DemuxH(p *av.Packet) error {
+func (d *Demuxer) DemuxH(p *av.Packet) error {
 	var tag Tag
 	_, err := tag.ParseMeidaTagHeader(p.Data, p.IsVideo)
 	if err != nil {
@@ -27,7 +27,7 @@ func (self *Demuxer) DemuxH(p *av.Packet) error {
 	return nil
 }
 
-func (self *Demuxer) Demux(p *av.Packet) error {
+func (d *Demuxer) Demux(p *av.Packet) error {
 	var tag Tag
 	n, err := tag.ParseMeidaTagHeader(p.Data, p.IsVideo)
 	if err != nil {
