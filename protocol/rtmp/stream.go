@@ -137,13 +137,6 @@ func (s *Stream) AddWriter(w av.WriteCloser) {
 }
 
 func (s *Stream) TransStart() {
-	// debug mode don't use it
-	// defer func() {
-	// 	if r := recover(); r != nil {
-	// 		log.Println("rtmp TransStart panic: ", r)
-	// 	}
-	// }()
-
 	s.isStart = true
 	var p av.Packet
 	for {

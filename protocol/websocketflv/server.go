@@ -8,7 +8,6 @@ import (
 	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/protocol/httpflv"
 	"github.com/gorilla/websocket"
-	"io"
 )
 
 type Server struct {
@@ -68,17 +67,7 @@ func (server *Server) handleConn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	flvWriter := httpflv.NewFLVWriter(paths[0], paths[1], url, &Writer{writer })
+	flvWriter := httpflv.NewFLVWriter(paths[0], paths[1], url, writer)
 	server.handler.HandleWriter(flvWriter)
 	flvWriter.Wait()
-}
-
-type Writer struct {
-	writer io.WriteCloser
-}
-
-func (writer *Writer) Write(p []byte) (n int, err error) {
-	n, err = writer.writer.Write(p)
-	writer.writer.Close()
-	return
 }
