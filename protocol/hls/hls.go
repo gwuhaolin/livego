@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/gwuhaolin/livego/utils/cmap"
-	"github.com/golang/glog"
 	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/container/flv"
 	"github.com/gwuhaolin/livego/container/ts"
@@ -217,7 +216,7 @@ func (self *Source) GetCacheInc() *TSCacheItem {
 }
 
 func (self *Source) DropPacket(pktQue chan av.Packet, info av.Info) {
-	glog.Errorf("[%v] packet queue max!!!", info)
+	log.Printf("[%v] packet queue max!!!", info)
 	for i := 0; i < maxQueueNum-84; i++ {
 		tmpPkt, ok := <-pktQue
 		// try to don't drop audio
@@ -256,12 +255,12 @@ func (self *Source) Write(p av.Packet) error {
 
 func (self *Source) SendPacket() error {
 	defer func() {
-		glog.Infof("[%v] hls sender stop", self.info)
+		log.Printf("[%v] hls sender stop", self.info)
 		if r := recover(); r != nil {
 			log.Println("hls SendPacket panic: ", r)
 		}
 	}()
-	glog.Infof("[%v] hls sender start", self.info)
+	log.Printf("[%v] hls sender start", self.info)
 	for {
 		if self.closed {
 			return errors.New("closed")

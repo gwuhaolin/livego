@@ -9,7 +9,6 @@ import (
 
 	"errors"
 
-	"github.com/golang/glog"
 	"github.com/gwuhaolin/livego/utils/uid"
 	"github.com/gwuhaolin/livego/protocol/amf"
 	"github.com/gwuhaolin/livego/av"
@@ -154,7 +153,7 @@ func NewFLVWriter(app, title, url string, ctx http.ResponseWriter) *FLVWriter {
 }
 
 func (self *FLVWriter) DropPacket(pktQue chan av.Packet, info av.Info) {
-	glog.Errorf("[%v] packet queue max!!!", info)
+	log.Printf("[%v] packet queue max!!!", info)
 	for i := 0; i < maxQueueNum-84; i++ {
 		tmpPkt, ok := <-pktQue
 		if ok && tmpPkt.IsVideo {

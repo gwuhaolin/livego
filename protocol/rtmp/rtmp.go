@@ -15,7 +15,6 @@ import (
 	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/utils/uid"
 	"github.com/gwuhaolin/livego/container/flv"
-	"github.com/golang/glog"
 	"github.com/gwuhaolin/livego/protocol/rtmp/core"
 	"log"
 )
@@ -112,7 +111,7 @@ func (self *Server) handleConn(conn *core.Conn) error {
 	if connServer.IsPublisher() {
 		reader := NewVirReader(connServer)
 		self.handler.HandleReader(reader)
-		glog.Infof("new publisher: %+v", reader.Info())
+		log.Printf("new publisher: %+v", reader.Info())
 
 		if self.getter != nil {
 			writer := self.getter.GetWriter(reader.Info())
@@ -120,7 +119,7 @@ func (self *Server) handleConn(conn *core.Conn) error {
 		}
 	} else {
 		writer := NewVirWriter(connServer)
-		glog.Infof("new player: %+v", writer.Info())
+		log.Printf("new player: %+v", writer.Info())
 		self.handler.HandleWriter(writer)
 	}
 
@@ -174,7 +173,7 @@ func (self *VirWriter) Check() {
 }
 
 func (self *VirWriter) DropPacket(pktQue chan av.Packet, info av.Info) {
-	glog.Errorf("[%v] packet queue max!!!", info)
+	log.Printf("[%v] packet queue max!!!", info)
 	for i := 0; i < maxQueueNum-84; i++ {
 		tmpPkt, ok := <-pktQue
 		// try to don't drop audio

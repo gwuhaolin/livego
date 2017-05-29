@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/gwuhaolin/livego/protocol/amf"
-	"github.com/golang/glog"
 	"github.com/gwuhaolin/livego/av"
 	"log"
 )
@@ -207,7 +206,7 @@ func (self *ConnClient) Start(url string, method string) error {
 		port = ":" + port
 	}
 	ips, err := net.LookupIP(host)
-	glog.Infof("ips: %v, host: %v", ips, host)
+	log.Printf("ips: %v, host: %v", ips, host)
 	if err != nil {
 		log.Println(err)
 		return err

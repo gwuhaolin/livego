@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/gwuhaolin/livego/utils/cmap"
-	"github.com/golang/glog"
 	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/protocol/rtmp/cache"
+	"log"
 )
 
 var (
@@ -164,14 +164,14 @@ func (s *Stream) TransStart() {
 			v := item.Val.(*PackWriterCloser)
 			if !v.init {
 				if err = s.cache.Send(v.w); err != nil {
-					glog.Errorf("[%s] send cache packet error: %v, remove", v.w.Info(), err)
+					log.Printf("[%s] send cache packet error: %v, remove", v.w.Info(), err)
 					s.ws.Remove(item.Key)
 					continue
 				}
 				v.init = true
 			} else {
 				if err = v.w.Write(p); err != nil {
-					glog.Errorf("[%s] write packet error: %v, remove", v.w.Info(), err)
+					log.Printf("[%s] write packet error: %v, remove", v.w.Info(), err)
 					s.ws.Remove(item.Key)
 				}
 			}
@@ -211,7 +211,7 @@ func (s *Stream) CheckAlive() (n int) {
 
 func (s *Stream) closeInter() {
 	if s.r != nil {
-		glog.Infof("[%v] publisher closed", s.r.Info())
+		log.Printf("[%v] publisher closed", s.r.Info())
 	}
 
 	for item := range s.ws.IterBuffered() {
@@ -220,7 +220,7 @@ func (s *Stream) closeInter() {
 			if v.w.Info().IsInterval() {
 				v.w.Close(errors.New("closed"))
 				s.ws.Remove(item.Key)
-				glog.Infof("[%v] player closed and remove\n", v.w.Info())
+				log.Printf("[%v] player closed and remove\n", v.w.Info())
 			}
 		}
 
