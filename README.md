@@ -18,7 +18,7 @@ live streaming server write in pure go, simple efficient and can run in any plat
 
 ## Install
 ### Download Bin
-TODO
+[releases](https://github.com/gwuhaolin/livego/releases)
 
 ### Docker
 TODO
