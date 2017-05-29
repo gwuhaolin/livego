@@ -1,2 +1,11 @@
 build:
   binary: livego
+  goos:
+      - windows
+      - darwin
+      - linux
+      - freebsd
+  goarch:
+      - amd64
+      - arm
+      - arm64
