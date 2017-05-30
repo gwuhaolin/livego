@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	version     = "master"
 	rtmpAddr    = flag.String("rtmp-addr", ":1935", "RTMP server listen address")
 	httpFlvAddr = flag.String("httpflv-addr", ":7001", "HTTP-FLV server listen address")
 	hlsAddr     = flag.String("hls-addr", ":7002", "HLS server listen address")
@@ -19,7 +20,7 @@ var (
 )
 
 func init() {
-	log.SetFlags(log.Llongfile | log.Ltime | log.Ldate)
+	log.SetFlags(log.Lshortfile | log.Ltime | log.Ldate)
 	flag.Parse()
 }
 
@@ -102,7 +103,7 @@ func main() {
 			time.Sleep(1 * time.Second)
 		}
 	}()
-
+	log.Println("start livego", version)
 	stream := rtmp.NewRtmpStream()
 	hlsServer := startHls()
 	startHTTPFlv(stream)
