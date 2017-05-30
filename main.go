@@ -9,14 +9,12 @@ import (
 	"github.com/gwuhaolin/livego/protocol/hls"
 	"github.com/gwuhaolin/livego/protocol/httpflv"
 	"github.com/gwuhaolin/livego/protocol/httpopera"
-	"github.com/gwuhaolin/livego/protocol/websocketflv"
 )
 
 var (
 	rtmpAddr    = flag.String("rtmp-addr", ":1935", "RTMP server listen address")
-	httpFlvAddr = flag.String("http-flv-addr", ":7001", "HTTP-FLV server listen address")
-	websocketFlvAddr = flag.String("websocket-flv-addr", ":7002", "HTTP-FLV server listen address")
-	hlsAddr     = flag.String("hls-addr", ":7003", "HLS server listen address")
+	httpFlvAddr = flag.String("httpflv-addr", ":7001", "HTTP-FLV server listen address")
+	hlsAddr     = flag.String("hls-addr", ":7002", "HLS server listen address")
 	operaAddr   = flag.String("manage-addr", ":8080", "HTTP manage interface server listen address")
 )
 
@@ -38,7 +36,7 @@ func startHls() *hls.Server {
 				log.Println("HLS server panic: ", r)
 			}
 		}()
-		log.Println("HLS Listen On", *hlsAddr)
+		log.Println("HLS listen On", *hlsAddr)
 		hlsServer.Serve(hlsListen)
 	}()
 	return hlsServer
@@ -73,25 +71,7 @@ func startHTTPFlv(stream *rtmp.RtmpStream) {
 				log.Println("HTTP-FLV server panic: ", r)
 			}
 		}()
-		log.Println("HTTP-FLV Listen On", *httpFlvAddr)
-		hdlServer.Serve(flvListen)
-	}()
-}
-
-func startWebSocketFlv(stream *rtmp.RtmpStream) {
-	flvListen, err := net.Listen("tcp", *websocketFlvAddr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	hdlServer := websocketflv.NewServer(stream)
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Println("WebSocket-FLV server panic: ", r)
-			}
-		}()
-		log.Println("WebSocket-FLV Listen On", *websocketFlvAddr)
+		log.Println("HTTP-FLV listen On", *httpFlvAddr)
 		hdlServer.Serve(flvListen)
 	}()
 }
@@ -109,7 +89,7 @@ func startHTTPOpera(stream *rtmp.RtmpStream) {
 					log.Println("HTTP-Operation server panic: ", r)
 				}
 			}()
-			log.Println("HTTP-Operation Listen On", *operaAddr)
+			log.Println("HTTP-Operation listen On", *operaAddr)
 			opServer.Serve(opListen)
 		}()
 	}
@@ -126,7 +106,6 @@ func main() {
 	stream := rtmp.NewRtmpStream()
 	hlsServer := startHls()
 	startHTTPFlv(stream)
-	startWebSocketFlv(stream)
 	//startHTTPOpera(stream)
 	startRtmp(stream, hlsServer)
 }

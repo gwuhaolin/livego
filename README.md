@@ -7,7 +7,6 @@ live streaming server write in pure go, simple efficient and can run in any plat
 - [x] AMF
 - [x] HLS
 - [x] HTTP-FLV
-- [ ] WebSocket-FLV
 #### File container
 - [x] FLV
 - [x] TS

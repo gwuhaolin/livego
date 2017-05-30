@@ -1,10 +1,10 @@
 package httpflv
 
 import (
-	"io"
 	"time"
 	"errors"
 	"log"
+	"net/http"
 	"github.com/gwuhaolin/livego/utils/uid"
 	"github.com/gwuhaolin/livego/protocol/amf"
 	"github.com/gwuhaolin/livego/av"
@@ -23,11 +23,11 @@ type FLVWriter struct {
 	buf             []byte
 	closed          bool
 	closedChan      chan struct{}
-	ctx             io.Writer
+	ctx             http.ResponseWriter
 	packetQueue     chan av.Packet
 }
 
-func NewFLVWriter(app, title, url string, ctx io.Writer) *FLVWriter {
+func NewFLVWriter(app, title, url string, ctx http.ResponseWriter) *FLVWriter {
 	ret := &FLVWriter{
 		Uid:         uid.NewId(),
 		app:         app,
