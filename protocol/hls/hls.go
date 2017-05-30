@@ -104,6 +104,10 @@ func (server *Server) handle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		tsCache := conn.GetCacheInc()
+		if tsCache == nil {
+			http.Error(w, ErrNoPublisher.Error(), http.StatusForbidden)
+			return
+		}
 		body, err := tsCache.GenM3U8PlayList()
 		if err != nil {
 			log.Println("GenM3U8PlayList error: ", err)

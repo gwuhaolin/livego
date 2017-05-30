@@ -8,31 +8,6 @@ import (
 	"sync"
 )
 
-type TSCache struct {
-	entrys map[string]*TSCacheItem
-}
-
-func NewTSCache() *TSCache {
-	return &TSCache{
-		entrys: make(map[string]*TSCacheItem),
-	}
-}
-
-func (cache *TSCache) Set(key string, e *TSCacheItem) {
-	v, ok := cache.entrys[key]
-	if !ok {
-		cache.entrys[key] = e
-	}
-	if v.ID() != e.ID() {
-		cache.entrys[key] = e
-	}
-}
-
-func (cache *TSCache) Get(key string) *TSCacheItem {
-	v := cache.entrys[key]
-	return v
-}
-
 const (
 	maxTSCacheNum = 3
 )
@@ -107,21 +82,4 @@ func (tcCacheItem *TSCacheItem) GetItem(key string) (TSItem, error) {
 		return item, ErrNoKey
 	}
 	return item, nil
-}
-
-type TSItem struct {
-	Name     string
-	SeqNum   int
-	Duration int
-	Data     []byte
-}
-
-func NewTSItem(name string, duration, seqNum int, b []byte) TSItem {
-	var item TSItem
-	item.Name = name
-	item.SeqNum = seqNum
-	item.Duration = duration
-	item.Data = make([]byte, len(b))
-	copy(item.Data, b)
-	return item
 }
