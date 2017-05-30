@@ -27,22 +27,25 @@ func NewRtmpStream() *RtmpStream {
 
 func (rs *RtmpStream) HandleReader(r av.ReadCloser) {
 	info := r.Info()
-	var s *Stream
-	ok := rs.streams.Has(info.Key)
-	if !ok {
-		s = NewStream()
-		rs.streams.Set(info.Key, s)
-	} else {
-		s.TransStop()
-		id := s.ID()
-		if id != EmptyID && id != info.UID {
-			ns := NewStream()
-			s.Copy(ns)
-			s = ns
-			rs.streams.Set(info.Key, ns)
+	var stream *Stream
+	i, ok := rs.streams.Get(info.Key)
+	if ok {
+		if s, ok := i.(*Stream); ok {
+			s.TransStop()
+			id := s.ID()
+			if id != EmptyID && id != info.UID {
+				ns := NewStream()
+				s.Copy(ns)
+				s = ns
+				rs.streams.Set(info.Key, ns)
+			}
 		}
+	} else {
+		stream = NewStream()
+		rs.streams.Set(info.Key, stream)
 	}
-	s.AddReader(r)
+
+	stream.AddReader(r)
 }
 
 func (rs *RtmpStream) HandleWriter(w av.WriteCloser) {
