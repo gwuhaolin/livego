@@ -29,18 +29,16 @@ func (rs *RtmpStream) HandleReader(r av.ReadCloser) {
 	info := r.Info()
 	var stream *Stream
 	i, ok := rs.streams.Get(info.Key)
-	if ok {
-		if s, ok := i.(*Stream); ok {
-			s.TransStop()
-			id := s.ID()
-			if id != EmptyID && id != info.UID {
-				ns := NewStream()
-				s.Copy(ns)
-				s = ns
-				rs.streams.Set(info.Key, ns)
-			}
+	if stream, ok = i.(*Stream); ok {
+		stream.TransStop()
+		id := stream.ID()
+		if id != EmptyID && id != info.UID {
+			ns := NewStream()
+			stream.Copy(ns)
+			stream = ns
+			rs.streams.Set(info.Key, ns)
 		}
-	} else {
+	}else {
 		stream = NewStream()
 		rs.streams.Set(info.Key, stream)
 	}

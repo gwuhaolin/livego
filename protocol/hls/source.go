@@ -100,7 +100,9 @@ func (source *Source) Write(p av.Packet) error {
 	if len(source.packetQueue) >= maxQueueNum-24 {
 		source.DropPacket(source.packetQueue, source.info)
 	} else {
-		source.packetQueue <- p
+		if !source.closed {
+			source.packetQueue <- p
+		}
 	}
 	return nil
 }
