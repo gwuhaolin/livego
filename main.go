@@ -103,7 +103,7 @@ func main() {
 			time.Sleep(1 * time.Second)
 		}
 	}()
-	log.Println("start livego", version)
+	log.Println("start livego, version", version)
 	stream := rtmp.NewRtmpStream()
 	hlsServer := startHls()
 	startHTTPFlv(stream)
