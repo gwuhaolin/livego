@@ -36,3 +36,10 @@ TODO
     - `RTMP`:`rtmp://localhost:1935/live/movie`
     - `FLV`:`http://127.0.0.1:7001/live/movie.flv`
     - `HLS`:`http://127.0.0.1:7002/live/movie.m3u8`
+    
+    
+## Roadmap
+1. support config file - 20%
+2. add unit tests and continuous integration - 0%
+3. improve stable and reliable for production use - 0%
+4. rewrite docs - 0%
