@@ -1,21 +1,25 @@
 package rtmp
 
 import (
-	"net"
-	"time"
-	"net/url"
-	"strings"
 	"errors"
 	"flag"
-	"log"
+	"fmt"
 	"github.com/gwuhaolin/livego/av"
-	"github.com/gwuhaolin/livego/utils/uid"
+	"github.com/gwuhaolin/livego/configure"
 	"github.com/gwuhaolin/livego/container/flv"
 	"github.com/gwuhaolin/livego/protocol/rtmp/core"
+	"github.com/gwuhaolin/livego/utils/uid"
+	"log"
+	"net"
+	"net/url"
+	"reflect"
+	"strings"
+	"time"
 )
 
 const (
-	maxQueueNum = 1024
+	maxQueueNum           = 1024
+	SAVE_STATICS_INTERVAL = 5000
 )
 
 var (
@@ -42,9 +46,11 @@ func (c *Client) Dial(url string, method string) error {
 	}
 	if method == av.PUBLISH {
 		writer := NewVirWriter(connClient)
+		log.Printf("client Dial call NewVirWriter url=%s, method=%s", url, method)
 		c.handler.HandleWriter(writer)
 	} else if method == av.PLAY {
 		reader := NewVirReader(connClient)
+		log.Printf("client Dial call NewVirReader url=%s, method=%s", url, method)
 		c.handler.HandleReader(reader)
 		if c.getter != nil {
 			writer := c.getter.GetWriter(reader.Info())
@@ -103,12 +109,28 @@ func (s *Server) handleConn(conn *core.Conn) error {
 		log.Println("handleConn read msg err:", err)
 		return err
 	}
+
+	appname, _, _ := connServer.GetInfo()
+
+	if ret := configure.CheckAppName(appname); !ret {
+		err := errors.New("application name=%s is not configured")
+		conn.Close()
+		log.Println("CheckAppName err:", err)
+		return err
+	}
+
+	log.Printf("handleConn: IsPublisher=%v", connServer.IsPublisher())
 	if connServer.IsPublisher() {
+		if pushlist, ret := configure.GetStaticPushUrlList(appname); ret && (pushlist != nil) {
+			log.Printf("GetStaticPushUrlList: %v", pushlist)
+		}
 		reader := NewVirReader(connServer)
 		s.handler.HandleReader(reader)
 		log.Printf("new publisher: %+v", reader.Info())
 
 		if s.getter != nil {
+			writeType := reflect.TypeOf(s.getter)
+			log.Printf("handleConn:writeType=%v", writeType)
 			writer := s.getter.GetWriter(reader.Info())
 			s.handler.HandleWriter(writer)
 		}
@@ -132,12 +154,26 @@ type StreamReadWriteCloser interface {
 	Read(c *core.ChunkStream) error
 }
 
+type StaticsBW struct {
+	StreamId               uint32
+	VideoDatainBytes       uint64
+	LastVideoDatainBytes   uint64
+	VideoSpeedInBytesperMS uint64
+
+	AudioDatainBytes       uint64
+	LastAudioDatainBytes   uint64
+	AudioSpeedInBytesperMS uint64
+
+	LastTimestamp int64
+}
+
 type VirWriter struct {
-	Uid         string
-	closed      bool
+	Uid    string
+	closed bool
 	av.RWBaser
 	conn        StreamReadWriteCloser
-	packetQueue chan av.Packet
+	packetQueue chan *av.Packet
+	WriteBWInfo StaticsBW
 }
 
 func NewVirWriter(conn StreamReadWriteCloser) *VirWriter {
@@ -145,8 +181,10 @@ func NewVirWriter(conn StreamReadWriteCloser) *VirWriter {
 		Uid:         uid.NewId(),
 		conn:        conn,
 		RWBaser:     av.NewRWBaser(time.Second * time.Duration(*writeTimeout)),
-		packetQueue: make(chan av.Packet, maxQueueNum),
+		packetQueue: make(chan *av.Packet, maxQueueNum),
+		WriteBWInfo: StaticsBW{0, 0, 0, 0, 0, 0, 0, 0},
 	}
+
 	go ret.Check()
 	go func() {
 		err := ret.SendPacket()
@@ -155,6 +193,30 @@ func NewVirWriter(conn StreamReadWriteCloser) *VirWriter {
 		}
 	}()
 	return ret
+}
+
+func (v *VirWriter) SaveStatics(streamid uint32, length uint64, isVideoFlag bool) {
+	nowInMS := int64(time.Now().UnixNano() / 1e6)
+
+	v.WriteBWInfo.StreamId = streamid
+	if isVideoFlag {
+		v.WriteBWInfo.VideoDatainBytes = v.WriteBWInfo.VideoDatainBytes + length
+	} else {
+		v.WriteBWInfo.AudioDatainBytes = v.WriteBWInfo.AudioDatainBytes + length
+	}
+
+	if v.WriteBWInfo.LastTimestamp == 0 {
+		v.WriteBWInfo.LastTimestamp = nowInMS
+	} else if (nowInMS - v.WriteBWInfo.LastTimestamp) >= SAVE_STATICS_INTERVAL {
+		diffTimestamp := (nowInMS - v.WriteBWInfo.LastTimestamp) / 1000
+
+		v.WriteBWInfo.VideoSpeedInBytesperMS = (v.WriteBWInfo.VideoDatainBytes - v.WriteBWInfo.LastVideoDatainBytes) * 8 / uint64(diffTimestamp) / 1000
+		v.WriteBWInfo.AudioSpeedInBytesperMS = (v.WriteBWInfo.AudioDatainBytes - v.WriteBWInfo.LastAudioDatainBytes) * 8 / uint64(diffTimestamp) / 1000
+
+		v.WriteBWInfo.LastVideoDatainBytes = v.WriteBWInfo.VideoDatainBytes
+		v.WriteBWInfo.LastAudioDatainBytes = v.WriteBWInfo.AudioDatainBytes
+		v.WriteBWInfo.LastTimestamp = nowInMS
+	}
 }
 
 func (v *VirWriter) Check() {
@@ -167,7 +229,7 @@ func (v *VirWriter) Check() {
 	}
 }
 
-func (v *VirWriter) DropPacket(pktQue chan av.Packet, info av.Info) {
+func (v *VirWriter) DropPacket(pktQue chan *av.Packet, info av.Info) {
 	log.Printf("[%v] packet queue max!!!", info)
 	for i := 0; i < maxQueueNum-84; i++ {
 		tmpPkt, ok := <-pktQue
@@ -199,17 +261,26 @@ func (v *VirWriter) DropPacket(pktQue chan av.Packet, info av.Info) {
 }
 
 //
-func (v *VirWriter) Write(p av.Packet) error {
-	if !v.closed {
-		if len(v.packetQueue) >= maxQueueNum-24 {
-			v.DropPacket(v.packetQueue, v.Info())
-		} else {
-			v.packetQueue <- p
-		}
-		return nil
-	} else {
-		return errors.New("closed")
+func (v *VirWriter) Write(p *av.Packet) (err error) {
+	err = nil
+
+	if v.closed {
+		err = errors.New("VirWriter closed")
+		return
 	}
+	defer func() {
+		if e := recover(); e != nil {
+			errString := fmt.Sprintf("VirWriter has already been closed:%v", e)
+			err = errors.New(errString)
+		}
+	}()
+	if len(v.packetQueue) >= maxQueueNum-24 {
+		v.DropPacket(v.packetQueue, v.Info())
+	} else {
+		v.packetQueue <- p
+	}
+
+	return
 }
 
 func (v *VirWriter) SendPacket() error {
@@ -219,7 +290,7 @@ func (v *VirWriter) SendPacket() error {
 		if ok {
 			cs.Data = p.Data
 			cs.Length = uint32(len(p.Data))
-			cs.StreamID = 1
+			cs.StreamID = p.StreamID
 			cs.Timestamp = p.TimeStamp
 			cs.Timestamp += v.BaseTimeStamp()
 
@@ -233,6 +304,7 @@ func (v *VirWriter) SendPacket() error {
 				}
 			}
 
+			v.SaveStatics(p.StreamID, uint64(cs.Length), p.IsVideo)
 			v.SetPreTime()
 			v.RecTimeStamp(cs.Timestamp, cs.TypeID)
 			err := v.conn.Write(cs)
@@ -240,6 +312,7 @@ func (v *VirWriter) SendPacket() error {
 				v.closed = true
 				return err
 			}
+
 		} else {
 			return errors.New("closed")
 		}
@@ -271,18 +344,45 @@ func (v *VirWriter) Close(err error) {
 }
 
 type VirReader struct {
-	Uid     string
+	Uid string
 	av.RWBaser
-	demuxer *flv.Demuxer
-	conn    StreamReadWriteCloser
+	demuxer    *flv.Demuxer
+	conn       StreamReadWriteCloser
+	ReadBWInfo StaticsBW
 }
 
 func NewVirReader(conn StreamReadWriteCloser) *VirReader {
 	return &VirReader{
-		Uid:     uid.NewId(),
-		conn:    conn,
-		RWBaser: av.NewRWBaser(time.Second * time.Duration(*writeTimeout)),
-		demuxer: flv.NewDemuxer(),
+		Uid:        uid.NewId(),
+		conn:       conn,
+		RWBaser:    av.NewRWBaser(time.Second * time.Duration(*writeTimeout)),
+		demuxer:    flv.NewDemuxer(),
+		ReadBWInfo: StaticsBW{0, 0, 0, 0, 0, 0, 0, 0},
+	}
+}
+
+func (v *VirReader) SaveStatics(streamid uint32, length uint64, isVideoFlag bool) {
+	nowInMS := int64(time.Now().UnixNano() / 1e6)
+
+	v.ReadBWInfo.StreamId = streamid
+	if isVideoFlag {
+		v.ReadBWInfo.VideoDatainBytes = v.ReadBWInfo.VideoDatainBytes + length
+	} else {
+		v.ReadBWInfo.AudioDatainBytes = v.ReadBWInfo.AudioDatainBytes + length
+	}
+
+	if v.ReadBWInfo.LastTimestamp == 0 {
+		v.ReadBWInfo.LastTimestamp = nowInMS
+	} else if (nowInMS - v.ReadBWInfo.LastTimestamp) >= SAVE_STATICS_INTERVAL {
+		diffTimestamp := (nowInMS - v.ReadBWInfo.LastTimestamp) / 1000
+
+		//log.Printf("now=%d, last=%d, diff=%d", nowInMS, v.ReadBWInfo.LastTimestamp, diffTimestamp)
+		v.ReadBWInfo.VideoSpeedInBytesperMS = (v.ReadBWInfo.VideoDatainBytes - v.ReadBWInfo.LastVideoDatainBytes) * 8 / uint64(diffTimestamp) / 1000
+		v.ReadBWInfo.AudioSpeedInBytesperMS = (v.ReadBWInfo.AudioDatainBytes - v.ReadBWInfo.LastAudioDatainBytes) * 8 / uint64(diffTimestamp) / 1000
+
+		v.ReadBWInfo.LastVideoDatainBytes = v.ReadBWInfo.VideoDatainBytes
+		v.ReadBWInfo.LastAudioDatainBytes = v.ReadBWInfo.AudioDatainBytes
+		v.ReadBWInfo.LastTimestamp = nowInMS
 	}
 }
 
@@ -311,8 +411,11 @@ func (v *VirReader) Read(p *av.Packet) (err error) {
 	p.IsAudio = cs.TypeID == av.TAG_AUDIO
 	p.IsVideo = cs.TypeID == av.TAG_VIDEO
 	p.IsMetadata = cs.TypeID == av.TAG_SCRIPTDATAAMF0 || cs.TypeID == av.TAG_SCRIPTDATAAMF3
+	p.StreamID = cs.StreamID
 	p.Data = cs.Data
 	p.TimeStamp = cs.Timestamp
+
+	v.SaveStatics(p.StreamID, uint64(len(p.Data)), p.IsVideo)
 	v.demuxer.DemuxH(p)
 	return err
 }

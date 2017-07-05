@@ -2,21 +2,23 @@ package main
 
 import (
 	"flag"
-	"net"
-	"time"
-	"log"
-	"github.com/gwuhaolin/livego/protocol/rtmp"
+	"github.com/gwuhaolin/livego/configure"
 	"github.com/gwuhaolin/livego/protocol/hls"
 	"github.com/gwuhaolin/livego/protocol/httpflv"
 	"github.com/gwuhaolin/livego/protocol/httpopera"
+	"github.com/gwuhaolin/livego/protocol/rtmp"
+	"log"
+	"net"
+	"time"
 )
 
 var (
-	version     = "master"
-	rtmpAddr    = flag.String("rtmp-addr", ":1935", "RTMP server listen address")
-	httpFlvAddr = flag.String("httpflv-addr", ":7001", "HTTP-FLV server listen address")
-	hlsAddr     = flag.String("hls-addr", ":7002", "HLS server listen address")
-	operaAddr   = flag.String("manage-addr", ":8080", "HTTP manage interface server listen address")
+	version        = "master"
+	rtmpAddr       = flag.String("rtmp-addr", ":1935", "RTMP server listen address")
+	httpFlvAddr    = flag.String("httpflv-addr", ":7001", "HTTP-FLV server listen address")
+	hlsAddr        = flag.String("hls-addr", ":7002", "HLS server listen address")
+	operaAddr      = flag.String("manage-addr", ":8090", "HTTP manage interface server listen address")
+	configfilename = flag.String("cfgfile", "livego.cfg", "live configure filename")
 )
 
 func init() {
@@ -49,7 +51,16 @@ func startRtmp(stream *rtmp.RtmpStream, hlsServer *hls.Server) {
 		log.Fatal(err)
 	}
 
-	rtmpServer := rtmp.NewRtmpServer(stream, hlsServer)
+	var rtmpServer *rtmp.Server
+
+	if hlsServer == nil {
+		rtmpServer = rtmp.NewRtmpServer(stream, nil)
+		log.Printf("hls server disable....")
+	} else {
+		rtmpServer = rtmp.NewRtmpServer(stream, hlsServer)
+		log.Printf("hls server enable....")
+	}
+
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("RTMP server panic: ", r)
@@ -83,7 +94,7 @@ func startHTTPOpera(stream *rtmp.RtmpStream) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		opServer := httpopera.NewServer(stream)
+		opServer := httpopera.NewServer(stream, *rtmpAddr)
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
@@ -104,9 +115,16 @@ func main() {
 		}
 	}()
 	log.Println("start livego, version", version)
+	err := configure.LoadConfig(*configfilename)
+	if err != nil {
+		return
+	}
+
 	stream := rtmp.NewRtmpStream()
 	hlsServer := startHls()
 	startHTTPFlv(stream)
-	//startHTTPOpera(stream)
+	startHTTPOpera(stream)
+
 	startRtmp(stream, hlsServer)
+	//startRtmp(stream, nil)
 }

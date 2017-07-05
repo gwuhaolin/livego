@@ -62,6 +62,7 @@ type Packet struct {
 	IsVideo    bool
 	IsMetadata bool
 	TimeStamp  uint32 // dts
+	StreamID   uint32
 	Header     PacketHeader
 	Data       []byte
 }
@@ -148,5 +149,5 @@ type WriteCloser interface {
 	Closer
 	Alive
 	CalcTime
-	Write(Packet) error
+	Write(*Packet) error
 }

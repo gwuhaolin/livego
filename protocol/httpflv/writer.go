@@ -3,6 +3,7 @@ package httpflv
 import (
 	"time"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"github.com/gwuhaolin/livego/utils/uid"
@@ -17,14 +18,14 @@ const (
 )
 
 type FLVWriter struct {
-	Uid             string
+	Uid string
 	av.RWBaser
 	app, title, url string
 	buf             []byte
 	closed          bool
 	closedChan      chan struct{}
 	ctx             http.ResponseWriter
-	packetQueue     chan av.Packet
+	packetQueue     chan *av.Packet
 }
 
 func NewFLVWriter(app, title, url string, ctx http.ResponseWriter) *FLVWriter {
@@ -37,7 +38,7 @@ func NewFLVWriter(app, title, url string, ctx http.ResponseWriter) *FLVWriter {
 		RWBaser:     av.NewRWBaser(time.Second * 10),
 		closedChan:  make(chan struct{}),
 		buf:         make([]byte, headerLen),
-		packetQueue: make(chan av.Packet, maxQueueNum),
+		packetQueue: make(chan *av.Packet, maxQueueNum),
 	}
 
 	ret.ctx.Write([]byte{0x46, 0x4c, 0x56, 0x01, 0x05, 0x00, 0x00, 0x00, 0x09})
@@ -53,7 +54,7 @@ func NewFLVWriter(app, title, url string, ctx http.ResponseWriter) *FLVWriter {
 	return ret
 }
 
-func (flvWriter *FLVWriter) DropPacket(pktQue chan av.Packet, info av.Info) {
+func (flvWriter *FLVWriter) DropPacket(pktQue chan *av.Packet, info av.Info) {
 	log.Printf("[%v] packet queue max!!!", info)
 	for i := 0; i < maxQueueNum-84; i++ {
 		tmpPkt, ok := <-pktQue
@@ -80,18 +81,25 @@ func (flvWriter *FLVWriter) DropPacket(pktQue chan av.Packet, info av.Info) {
 	log.Println("packet queue len: ", len(pktQue))
 }
 
-func (flvWriter *FLVWriter) Write(p av.Packet) error {
-	if !flvWriter.closed {
-		if len(flvWriter.packetQueue) >= maxQueueNum-24 {
-			flvWriter.DropPacket(flvWriter.packetQueue, flvWriter.Info())
-		} else {
-			flvWriter.packetQueue <- p
+func (flvWriter *FLVWriter) Write(p *av.Packet) (err error) {
+	err = nil
+	if flvWriter.closed {
+		err = errors.New("flvwrite source closed")
+		return
+	}
+	defer func() {
+		if e := recover(); e != nil {
+			errString := fmt.Sprintf("FLVWriter has already been closed:%v", e)
+			err = errors.New(errString)
 		}
-		return nil
+	}()
+	if len(flvWriter.packetQueue) >= maxQueueNum-24 {
+		flvWriter.DropPacket(flvWriter.packetQueue, flvWriter.Info())
 	} else {
-		return errors.New("closed")
+		flvWriter.packetQueue <- p
 	}
 
+	return
 }
 
 func (flvWriter *FLVWriter) SendPacket() error {
