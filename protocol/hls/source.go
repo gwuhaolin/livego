@@ -35,7 +35,7 @@ type Source struct {
 	tsCache     *TSCacheItem
 	tsparser    *parser.CodecParser
 	closed      bool
-	packetQueue chan av.Packet
+	packetQueue chan *av.Packet
 }
 
 func NewSource(info av.Info) *Source {
@@ -51,7 +51,7 @@ func NewSource(info av.Info) *Source {
 		tsCache:     NewTSCacheItem(info.Key),
 		tsparser:    parser.NewCodecParser(),
 		bwriter:     bytes.NewBuffer(make([]byte, 100*1024)),
-		packetQueue: make(chan av.Packet, maxQueueNum),
+		packetQueue: make(chan *av.Packet, maxQueueNum),
 	}
 	go func() {
 		err := s.SendPacket()
@@ -67,7 +67,7 @@ func (source *Source) GetCacheInc() *TSCacheItem {
 	return source.tsCache
 }
 
-func (source *Source) DropPacket(pktQue chan av.Packet, info av.Info) {
+func (source *Source) DropPacket(pktQue chan *av.Packet, info av.Info) {
 	log.Printf("[%v] packet queue max!!!", info)
 	for i := 0; i < maxQueueNum-84; i++ {
 		tmpPkt, ok := <-pktQue
@@ -95,8 +95,19 @@ func (source *Source) DropPacket(pktQue chan av.Packet, info av.Info) {
 	log.Println("packet queue len: ", len(pktQue))
 }
 
-func (source *Source) Write(p av.Packet) error {
+func (source *Source) Write(p *av.Packet) (err error) {
+	err = nil
+	if source.closed {
+		err = errors.New("hls source closed")
+		return
+	}
 	source.SetPreTime()
+	defer func() {
+		if e := recover(); e != nil {
+			errString := fmt.Sprintf("hls source has already been closed:%v", e)
+			err = errors.New(errString)
+		}
+	}()
 	if len(source.packetQueue) >= maxQueueNum-24 {
 		source.DropPacket(source.packetQueue, source.info)
 	} else {
@@ -104,7 +115,7 @@ func (source *Source) Write(p av.Packet) error {
 			source.packetQueue <- p
 		}
 	}
-	return nil
+	return
 }
 
 func (source *Source) SendPacket() error {
@@ -114,6 +125,7 @@ func (source *Source) SendPacket() error {
 			log.Println("hls SendPacket panic: ", r)
 		}
 	}()
+
 	log.Printf("[%v] hls sender start", source.info)
 	for {
 		if source.closed {
@@ -126,7 +138,7 @@ func (source *Source) SendPacket() error {
 				continue
 			}
 
-			err := source.demuxer.Demux(&p)
+			err := source.demuxer.Demux(p)
 			if err == flv.ErrAvcEndSEQ {
 				log.Println(err)
 				continue
@@ -136,7 +148,7 @@ func (source *Source) SendPacket() error {
 					return err
 				}
 			}
-			compositionTime, isSeq, err := source.parse(&p)
+			compositionTime, isSeq, err := source.parse(p)
 			if err != nil {
 				log.Println(err)
 			}
@@ -146,7 +158,7 @@ func (source *Source) SendPacket() error {
 			if source.btswriter != nil {
 				source.stat.update(p.IsVideo, p.TimeStamp)
 				source.calcPtsDts(p.IsVideo, p.TimeStamp, uint32(compositionTime))
-				source.tsMux(&p)
+				source.tsMux(p)
 			}
 		} else {
 			return errors.New("closed")

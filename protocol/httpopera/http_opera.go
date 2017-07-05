@@ -2,7 +2,9 @@ package httpopera
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
+	"github.com/gwuhaolin/livego/protocol/rtmp/rtmprelay"
+	"io"
 	"net"
 	"net/http"
 	"log"
@@ -35,86 +37,203 @@ type OperationChange struct {
 	Stop      bool   `json:"stop"`
 }
 
-type Server struct {
-	handler av.Handler
+type ClientInfo struct {
+	url              string
+	rtmpRemoteClient *rtmp.Client
+	rtmpLocalClient  *rtmp.Client
 }
 
-func NewServer(h av.Handler) *Server {
+type Server struct {
+	handler  av.Handler
+	session  map[string]*rtmprelay.RtmpRelay
+	rtmpAddr string
+}
+
+func NewServer(h av.Handler, rtmpAddr string) *Server {
 	return &Server{
-		handler: h,
+		handler:  h,
+		session:  make(map[string]*rtmprelay.RtmpRelay),
+		rtmpAddr: rtmpAddr,
 	}
 }
 
 func (s *Server) Serve(l net.Listener) error {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/rtmp/operation", func(w http.ResponseWriter, r *http.Request) {
-		s.handleOpera(w, r)
+
+	mux.Handle("/statics", http.FileServer(http.Dir("statics")))
+
+	mux.HandleFunc("/control/push", func(w http.ResponseWriter, r *http.Request) {
+		s.handlePush(w, r)
+	})
+	mux.HandleFunc("/control/pull", func(w http.ResponseWriter, r *http.Request) {
+		s.handlePull(w, r)
+	})
+	mux.HandleFunc("/stat/livestat", func(w http.ResponseWriter, r *http.Request) {
+		s.GetLiveStatics(w, r)
 	})
 	http.Serve(l, mux)
 	return nil
 }
 
-// handleOpera, 拉流和推流的http api
-// @Path: /rtmp/operation
-// @Method: POST
-// @Param: json
-// 		method string, "push" or "pull"
-//		url string
-// 		stop bool
+type stream struct {
+	Key             string `json:"key"`
+	Url             string `json:"Url"`
+	StreamId        uint32 `json:"StreamId"`
+	VideoTotalBytes uint64 `json:123456`
+	VideoSpeed      uint64 `json:123456`
+	AudioTotalBytes uint64 `json:123456`
+	AudioSpeed      uint64 `json:123456`
+}
 
-// @Example,
-// curl -v -H "Content-Type: application/json" -X POST --data \
-// '{"method":"pull","url":"rtmp://127.0.0.1:1935/live/test"}' \
-// http://localhost:8087/rtmp/operation
-func (s *Server) handleOpera(w http.ResponseWriter, r *http.Request) {
-	rep := &Response{
-		w: w,
-	}
+type streams struct {
+	Publishers []stream `json:"publishers"`
+	Players    []stream `json:"players"`
+}
 
-	if r.Method != "POST" {
-		rep.Status = 14000
-		rep.Message = "bad request method"
-		rep.SendJson()
+//http://127.0.0.1:8090/stat/livestat
+func (server *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
+	rtmpStream := server.handler.(*rtmp.RtmpStream)
+	if rtmpStream == nil {
+		io.WriteString(w, "<h1>Get rtmp stream information error</h1>")
 		return
+	}
+
+	msgs := new(streams)
+	for item := range rtmpStream.GetStreams().IterBuffered() {
+		if s, ok := item.Val.(*rtmp.Stream); ok {
+			if s.GetReader() != nil {
+				switch s.GetReader().(type) {
+				case *rtmp.VirReader:
+					v := s.GetReader().(*rtmp.VirReader)
+					msg := stream{item.Key, v.Info().URL, v.ReadBWInfo.StreamId, v.ReadBWInfo.VideoDatainBytes, v.ReadBWInfo.VideoSpeedInBytesperMS,
+						v.ReadBWInfo.AudioDatainBytes, v.ReadBWInfo.AudioSpeedInBytesperMS}
+					msgs.Publishers = append(msgs.Publishers, msg)
+				}
+			}
+		}
+	}
+
+	for item := range rtmpStream.GetStreams().IterBuffered() {
+		ws := item.Val.(*rtmp.Stream).GetWs()
+		for s := range ws.IterBuffered() {
+			if pw, ok := s.Val.(*rtmp.PackWriterCloser); ok {
+				if pw.GetWriter() != nil {
+					switch pw.GetWriter().(type) {
+					case *rtmp.VirWriter:
+						v := pw.GetWriter().(*rtmp.VirWriter)
+						msg := stream{item.Key, v.Info().URL, v.WriteBWInfo.StreamId, v.WriteBWInfo.VideoDatainBytes, v.WriteBWInfo.VideoSpeedInBytesperMS,
+							v.WriteBWInfo.AudioDatainBytes, v.WriteBWInfo.AudioSpeedInBytesperMS}
+						msgs.Players = append(msgs.Players, msg)
+					}
+				}
+			}
+		}
+	}
+	resp, _ := json.Marshal(msgs)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resp)
+}
+
+//http://127.0.0.1:8090/control/push?&oper=start&app=live&name=123456&url=rtmp://192.168.16.136/live/123456
+func (s *Server) handlePull(w http.ResponseWriter, req *http.Request) {
+	var retString string
+	var err error
+
+	req.ParseForm()
+
+	oper := req.Form["oper"]
+	app := req.Form["app"]
+	name := req.Form["name"]
+	url := req.Form["url"]
+
+	log.Printf("control pull: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
+	if (len(app) <= 0) || (len(name) <= 0) || (len(url) <= 0) {
+		io.WriteString(w, "control push parameter error, please check them.</br>")
+		return
+	}
+
+	remoteurl := "rtmp://127.0.0.1" + s.rtmpAddr + "/" + app[0] + "/" + name[0]
+	localurl := url[0]
+
+	keyString := "pull:" + app[0] + "/" + name[0]
+	if oper[0] == "stop" {
+		pullRtmprelay, found := s.session[keyString]
+
+		if !found {
+			retString = fmt.Sprintf("session key[%s] not exist, please check it again.", keyString)
+			io.WriteString(w, retString)
+			return
+		}
+		log.Printf("rtmprelay stop push %s from %s", remoteurl, localurl)
+		pullRtmprelay.Stop()
+
+		delete(s.session, keyString)
+		retString = fmt.Sprintf("<h1>push url stop %s ok</h1></br>", url[0])
+		io.WriteString(w, retString)
+		log.Printf("pull stop return %s", retString)
 	} else {
-		result, err := ioutil.ReadAll(r.Body)
+		pullRtmprelay := rtmprelay.NewRtmpRelay(&localurl, &remoteurl)
+		log.Printf("rtmprelay start push %s from %s", remoteurl, localurl)
+		err = pullRtmprelay.Start()
 		if err != nil {
-			rep.Status = 15000
-			rep.Message = "read request body error"
-			rep.SendJson()
-			return
+			retString = fmt.Sprintf("push error=%v", err)
+		} else {
+			s.session[keyString] = pullRtmprelay
+			retString = fmt.Sprintf("<h1>push url start %s ok</h1></br>", url[0])
 		}
-		r.Body.Close()
-		log.Println("post body", result)
-
-		var op Operation
-		err = json.Unmarshal(result, &op)
-		if err != nil {
-			rep.Status = 12000
-			rep.Message = "parse json body failed"
-			rep.SendJson()
-			return
-		}
-
-		switch op.Method {
-		case "push":
-			s.Push(op.URL, op.Stop)
-		case "pull":
-			s.Pull(op.URL, op.Stop)
-		}
-
-		rep.Status = 10000
-		rep.Message = op.Method + " " + op.URL + " success"
-		rep.SendJson()
+		io.WriteString(w, retString)
+		log.Printf("pull start return %s", retString)
 	}
 }
 
-func (s *Server) Push(uri string, stop bool) error {
-	rtmpClient := rtmp.NewRtmpClient(s.handler, nil)
-	return rtmpClient.Dial(uri, av.PUBLISH)
-}
+//http://127.0.0.1:8090/control/push?&oper=start&app=live&name=123456&url=rtmp://192.168.16.136/live/123456
+func (s *Server) handlePush(w http.ResponseWriter, req *http.Request) {
+	var retString string
+	var err error
 
-func (s *Server) Pull(uri string, stop bool) error {
-	rtmpClient := rtmp.NewRtmpClient(s.handler, nil)
-	return rtmpClient.Dial(uri, av.PLAY)
+	req.ParseForm()
+
+	oper := req.Form["oper"]
+	app := req.Form["app"]
+	name := req.Form["name"]
+	url := req.Form["url"]
+
+	log.Printf("control push: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
+	if (len(app) <= 0) || (len(name) <= 0) || (len(url) <= 0) {
+		io.WriteString(w, "control push parameter error, please check them.</br>")
+		return
+	}
+
+	localurl := "rtmp://127.0.0.1" + s.rtmpAddr + "/" + app[0] + "/" + name[0]
+	remoteurl := url[0]
+
+	keyString := "push:" + app[0] + "/" + name[0]
+	if oper[0] == "stop" {
+		pushRtmprelay, found := s.session[keyString]
+		if !found {
+			retString = fmt.Sprintf("<h1>session key[%s] not exist, please check it again.</h1>", keyString)
+			io.WriteString(w, retString)
+			return
+		}
+		log.Printf("rtmprelay stop push %s from %s", remoteurl, localurl)
+		pushRtmprelay.Stop()
+
+		delete(s.session, keyString)
+		retString = fmt.Sprintf("<h1>push url stop %s ok</h1></br>", url[0])
+		io.WriteString(w, retString)
+		log.Printf("push stop return %s", retString)
+	} else {
+		pushRtmprelay := rtmprelay.NewRtmpRelay(&localurl, &remoteurl)
+		log.Printf("rtmprelay start push %s from %s", remoteurl, localurl)
+		err = pushRtmprelay.Start()
+		if err != nil {
+			retString = fmt.Sprintf("push error=%v", err)
+		} else {
+			retString = fmt.Sprintf("<h1>push url start %s ok</h1></br>", url[0])
+			s.session[keyString] = pushRtmprelay
+		}
+
+		io.WriteString(w, retString)
+		log.Printf("push start return %s", retString)
+	}
 }

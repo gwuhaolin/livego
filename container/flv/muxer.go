@@ -72,7 +72,7 @@ func NewFLVWriter(app, title, url string, ctx *os.File) *FLVWriter {
 	return ret
 }
 
-func (writer *FLVWriter) Write(p av.Packet) error {
+func (writer *FLVWriter) Write(p *av.Packet) error {
 	writer.RWBaser.SetPreTime()
 	h := writer.buf[:headerLen]
 	typeID := av.TAG_VIDEO

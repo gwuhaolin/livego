@@ -26,14 +26,14 @@ func init() {
 
 type SpecialCache struct {
 	full bool
-	p    av.Packet
+	p    *av.Packet
 }
 
 func NewSpecialCache() *SpecialCache {
 	return &SpecialCache{}
 }
 
-func (specialCache *SpecialCache) Write(p av.Packet) {
+func (specialCache *SpecialCache) Write(p *av.Packet) {
 	specialCache.p = p
 	specialCache.full = true
 }

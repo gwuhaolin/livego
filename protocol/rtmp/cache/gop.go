@@ -12,13 +12,13 @@ var (
 
 type array struct {
 	index   int
-	packets []av.Packet
+	packets []*av.Packet
 }
 
 func newArray() *array {
 	ret := &array{
 		index:   0,
-		packets: make([]av.Packet, 0, maxGOPCap),
+		packets: make([]*av.Packet, 0, maxGOPCap),
 	}
 	return ret
 }
@@ -28,7 +28,7 @@ func (array *array) reset() {
 	array.packets = array.packets[:0]
 }
 
-func (array *array) write(packet av.Packet) error {
+func (array *array) write(packet *av.Packet) error {
 	if array.index >= maxGOPCap {
 		return ErrGopTooBig
 	}
@@ -63,7 +63,7 @@ func NewGopCache(num int) *GopCache {
 	}
 }
 
-func (gopCache *GopCache) writeToArray(chunk av.Packet, startNew bool) error {
+func (gopCache *GopCache) writeToArray(chunk *av.Packet, startNew bool) error {
 	var ginc *array
 	if startNew {
 		ginc = gopCache.gops[gopCache.nextindex]
@@ -83,7 +83,7 @@ func (gopCache *GopCache) writeToArray(chunk av.Packet, startNew bool) error {
 	return nil
 }
 
-func (gopCache *GopCache) Write(p av.Packet) {
+func (gopCache *GopCache) Write(p *av.Packet) {
 	var ok bool
 	if p.IsVideo {
 		vh := p.Header.(av.VideoPacketHeader)
