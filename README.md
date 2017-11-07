@@ -1,49 +1,42 @@
 # livego
-live streaming server write in pure go, simple efficient and can run in any platform.
+简单高效的直播服务器：
+- 安装和使用非常简单；
+- 纯 Golang 编写，性能高，跨平台；
+- 支持常用的传输协议、文件格式、编码格式；
 
 <a target='_blank' rel='nofollow' href='https://app.codesponsor.io/link/3bvxELAxnq8r4wheFyRkED8U/gwuhaolin/livego'>
   <img alt='Sponsor' width='888' height='68' src='https://app.codesponsor.io/embed/3bvxELAxnq8r4wheFyRkED8U/gwuhaolin/livego.svg' />
 </a>
 
-## Support
-#### Transport protocol
+#### 支持的传输协议
 - [x] RTMP
 - [x] AMF
 - [x] HLS
 - [x] HTTP-FLV
-#### File container
+
+#### 支持的容器格式
 - [x] FLV
 - [x] TS
-#### AV coder
+
+#### 支持的编码格式
 - [x] H264
 - [x] AAC
 - [x] MP3
 
-## Install
-### Download Bin
-[releases](https://github.com/gwuhaolin/livego/releases)
+## 安装
+直接下载编译好的[二进制文件](https://github.com/gwuhaolin/livego/releases)后，在命令行中执行。
 
-### Docker
-TODO
+#### 从源码编译
+1. 下载源码 `git clone https://github.com/gwuhaolin/livego.git`
+2. 去 livego 目录中 执行 `go build`
 
-### Install System Service
-TODO
-
-### Build From Source code
-1. run `git clone https://github.com/gwuhaolin/livego.git`
-2. cd to livego dir then run `go build`
-
-## Use
-2. run  `livego` to start livego server
-3. push `RTMP` stream to `rtmp://localhost:1935/live/movie`, eg use `ffmpeg -re -i demo.flv -c copy -f flv rtmp://localhost:1935/live/movie`
-4. play live stream form:
+## 使用
+2. 启动服务：执行 `livego` 二进制文件启动 livego 服务；
+3. 上行推流：通过 `RTMP` 协议把视频流推送到 `rtmp://localhost:1935/live/movie`，例如使用 `ffmpeg -re -i demo.flv -c copy -f flv rtmp://localhost:1935/live/movie` 推送；
+4. 下行播放：支持以下三种播放协议，播放地址如下：
     - `RTMP`:`rtmp://localhost:1935/live/movie`
     - `FLV`:`http://127.0.0.1:7001/live/movie.flv`
     - `HLS`:`http://127.0.0.1:7002/live/movie.m3u8`
-    
-    
-## Roadmap
-1. support config file - 20%
-2. add unit tests and continuous integration - 0%
-3. improve stable and reliable for production use - 0%
-4. rewrite docs - 0%
+
+
+### [和 flv.js 搭配使用](https://github.com/gwuhaolin/blog/issues/3)
