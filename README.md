@@ -4,10 +4,6 @@
 - 纯 Golang 编写，性能高，跨平台；
 - 支持常用的传输协议、文件格式、编码格式；
 
-<a target='_blank' rel='nofollow' href='https://app.codesponsor.io/link/3bvxELAxnq8r4wheFyRkED8U/gwuhaolin/livego'>
-  <img alt='Sponsor' width='888' height='68' src='https://app.codesponsor.io/embed/3bvxELAxnq8r4wheFyRkED8U/gwuhaolin/livego.svg' />
-</a>
-
 #### 支持的传输协议
 - [x] RTMP
 - [x] AMF
