@@ -36,3 +36,5 @@
 
 
 ### [和 flv.js 搭配使用](https://github.com/gwuhaolin/blog/issues/3)
+
+对 Golang 感兴趣？请看[Golang 中文学习资料汇总](http://go.wuhaolin.cn/)
