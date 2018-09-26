@@ -307,6 +307,10 @@ func (connClient *ConnClient) Write(c ChunkStream) error {
 	return connClient.conn.Write(&c)
 }
 
+func (connClient *ConnClient) Flush() error {
+	return connClient.conn.Flush()
+}
+
 func (connClient *ConnClient) Read(c *ChunkStream) (err error) {
 	return connClient.conn.Read(c)
 }
