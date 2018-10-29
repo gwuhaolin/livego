@@ -2,7 +2,8 @@ package flv
 
 import (
 	"errors"
-	"github.com/gwuhaolin/livego/av"
+
+	"livego/av"
 )
 
 var (

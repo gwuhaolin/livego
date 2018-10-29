@@ -5,14 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"math/rand"
 	"net"
 	neturl "net/url"
 	"strings"
 
-	"github.com/gwuhaolin/livego/protocol/amf"
-	"github.com/gwuhaolin/livego/av"
-	"log"
+	"livego/av"
+	"livego/protocol/amf"
 )
 
 var (

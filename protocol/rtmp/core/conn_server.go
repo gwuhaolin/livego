@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"io"
-
-	"github.com/gwuhaolin/livego/protocol/amf"
-	"github.com/gwuhaolin/livego/av"
 	"log"
+
+	"livego/av"
+	"livego/protocol/amf"
 )
 
 var (
