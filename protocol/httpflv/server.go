@@ -2,12 +2,12 @@ package httpflv
 
 import (
 	"encoding/json"
-	"strings"
-	"net"
-	"net/http"
-	"log"
 	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/protocol/rtmp"
+	"log"
+	"net"
+	"net/http"
+	"strings"
 )
 
 type Server struct {
@@ -42,10 +42,11 @@ func (server *Server) Serve(l net.Listener) error {
 	return nil
 }
 
-func (server *Server) getStream(w http.ResponseWriter, r *http.Request) {
+// 获取发布和播放器的信息
+func (server *Server) getStreams(w http.ResponseWriter, r *http.Request) *streams {
 	rtmpStream := server.handler.(*rtmp.RtmpStream)
 	if rtmpStream == nil {
-		return
+		return nil
 	}
 	msgs := new(streams)
 	for item := range rtmpStream.GetStreams().IterBuffered() {
@@ -68,10 +69,18 @@ func (server *Server) getStream(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+
+	return msgs
+}
+
+func (server *Server) getStream(w http.ResponseWriter, r *http.Request) {
+	msgs := server.getStreams(w, r)
+	if msgs == nil {
+		return
+	}
 	resp, _ := json.Marshal(msgs)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(resp)
-
 }
 
 func (server *Server) handleConn(w http.ResponseWriter, r *http.Request) {
@@ -94,6 +103,25 @@ func (server *Server) handleConn(w http.ResponseWriter, r *http.Request) {
 	if len(paths) != 2 {
 		http.Error(w, "invalid path", http.StatusBadRequest)
 		return
+	}
+
+	// 判断视屏流是否发布,如果没有发布,直接返回404
+	msgs := server.getStreams(w, r)
+	if msgs == nil || len(msgs.Publishers) == 0 {
+		http.Error(w, "invalid path", http.StatusNotFound)
+		return
+	} else {
+		include := false
+		for _, item := range msgs.Publishers {
+			if item.Key == path {
+				include = true
+				break
+			}
+		}
+		if include == false {
+			http.Error(w, "invalid path", http.StatusNotFound)
+			return
+		}
 	}
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
