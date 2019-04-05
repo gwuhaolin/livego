@@ -113,7 +113,7 @@ func (s *Server) handleConn(conn *core.Conn) error {
 	appname, _, _ := connServer.GetInfo()
 
 	if ret := configure.CheckAppName(appname); !ret {
-		err := errors.New("application name=%s is not configured")
+		err := errors.New(fmt.Sprintf("application name=%s is not configured", appname))
 		conn.Close()
 		log.Println("CheckAppName err:", err)
 		return err
