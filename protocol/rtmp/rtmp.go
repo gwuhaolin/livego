@@ -134,6 +134,8 @@ func (s *Server) handleConn(conn *core.Conn) error {
 			writer := s.getter.GetWriter(reader.Info())
 			s.handler.HandleWriter(writer)
 		}
+		flvWriter:=new(flv.FlvDvr)
+		s.handler.HandleWriter(flvWriter.GetWriter(reader.Info()))
 	} else {
 		writer := NewVirWriter(connServer)
 		log.Printf("new player: %+v", writer.Info())
