@@ -1,0 +1,5 @@
+github.com/gwuhaolin/livego v0.0.0-20190405021653-1ad8ba7e40c6 h1:uEsXqXtWbklIrbTK+ELZ1xnl4V2VNyeZhPu8ry6T4UI=
+github.com/gwuhaolin/livego v0.0.0-20190405021653-1ad8ba7e40c6/go.mod h1:lbHI+v1gU+VxsFnvsq5Zkh+f5uI9YKfqeDZkRFqHGHU=
+github.com/orcaman/concurrent-map v0.0.0-20190314100340-2693aad1ed75 h1:IV56VwUb9Ludyr7s53CMuEh4DdTnnQtEPLEgLyJ0kHI=
+github.com/orcaman/concurrent-map v0.0.0-20190314100340-2693aad1ed75/go.mod h1:Lu3tH6HLW3feq74c2GC+jIMS/K2CFcDWnWD9XkenwhI=
+github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=

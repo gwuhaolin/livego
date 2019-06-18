@@ -6,7 +6,7 @@ import (
 )
 
 func NewId() string {
-	id, _ := uuid.NewV4()
+	id := uuid.NewV4()
 	b64 := base64.URLEncoding.EncodeToString(id.Bytes()[:12])
 	return b64
 }
