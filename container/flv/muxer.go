@@ -6,6 +6,7 @@ import (
 	"flag"
 	"os"
 	"log"
+	"fmt"
 	"github.com/gwuhaolin/livego/utils/uid"
 	"github.com/gwuhaolin/livego/protocol/amf"
 	"github.com/gwuhaolin/livego/av"
@@ -135,4 +136,32 @@ func (writer *FLVWriter) Info() (ret av.Info) {
 	ret.URL = writer.url
 	ret.Key = writer.app + "/" + writer.title
 	return
+}
+type FlvDvr struct{}
+
+func (f *FlvDvr) GetWriter(info av.Info) av.WriteCloser {
+	paths := strings.SplitN(info.Key, "/", 2)
+	if len(paths) != 2 {
+
+		log.Println("invalid info")
+		return nil
+	}
+
+	err := os.MkdirAll(paths[0], 0755)
+	if err != nil {
+		log.Println("mkdir error:", err)
+		return nil
+	}
+
+	fileName := fmt.Sprintf("%s_%d.%s", info.Key, time.Now().Unix(), "flv")
+	log.Println("flv dvr save stream to: ", fileName)
+	w, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0755)
+	if err != nil {
+		log.Println("open file error: ", err)
+		return nil
+	}
+
+	writer := NewFLVWriter(paths[0], paths[1], info.URL, w)
+	log.Println("new flv dvr: ", writer.Info())
+	return writer
 }
