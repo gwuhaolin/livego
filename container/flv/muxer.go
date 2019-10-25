@@ -1,16 +1,17 @@
 package flv
 
 import (
+	"flag"
+	"fmt"
+	"log"
+	"os"
 	"strings"
 	"time"
-	"flag"
-	"os"
-	"log"
-	"fmt"
-	"github.com/gwuhaolin/livego/utils/uid"
-	"github.com/gwuhaolin/livego/protocol/amf"
+
 	"github.com/gwuhaolin/livego/av"
+	"github.com/gwuhaolin/livego/protocol/amf"
 	"github.com/gwuhaolin/livego/utils/pio"
+	"github.com/gwuhaolin/livego/utils/uid"
 )
 
 var (
@@ -46,7 +47,7 @@ const (
 )
 
 type FLVWriter struct {
-	Uid             string
+	Uid string
 	av.RWBaser
 	app, title, url string
 	buf             []byte
@@ -137,6 +138,7 @@ func (writer *FLVWriter) Info() (ret av.Info) {
 	ret.Key = writer.app + "/" + writer.title
 	return
 }
+
 type FlvDvr struct{}
 
 func (f *FlvDvr) GetWriter(info av.Info) av.WriteCloser {

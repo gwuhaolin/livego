@@ -1,7 +1,9 @@
 package av
 
-import "time"
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 type RWBaser struct {
 	lock               sync.Mutex

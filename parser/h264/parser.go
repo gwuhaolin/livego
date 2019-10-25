@@ -98,7 +98,7 @@ func (parser *Parser) parseSpecificInfo(src []byte) error {
 		return spsDataError
 	}
 	sps = append(sps, startCode...)
-	sps = append(sps, src[8:(8 + seq.spsLen)]...)
+	sps = append(sps, src[8:(8+seq.spsLen)]...)
 
 	//get pps
 	tmpBuf := src[(8 + seq.spsLen):]
@@ -190,7 +190,7 @@ func (parser *Parser) getAnnexbH264(src []byte, w io.Writer) error {
 				if err != nil {
 					return err
 				}
-				_, err = w.Write(src[index: index+nalLen])
+				_, err = w.Write(src[index : index+nalLen])
 				if err != nil {
 					return err
 				}
@@ -202,7 +202,7 @@ func (parser *Parser) getAnnexbH264(src []byte, w io.Writer) error {
 				if err != nil {
 					return err
 				}
-				_, err = parser.pps.Write(src[index: index+nalLen])
+				_, err = parser.pps.Write(src[index : index+nalLen])
 				if err != nil {
 					return err
 				}

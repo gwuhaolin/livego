@@ -1,0 +1,16 @@
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - binary: livego
+    id: livego
+    main: ./main.go
+    goos:
+      - windows
+      - darwin
+      - linux
+      - freebsd
+    goarch:
+      - amd64
+      - 386
+      - arm

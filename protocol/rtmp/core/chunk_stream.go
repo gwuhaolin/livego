@@ -73,7 +73,7 @@ func (chunkStream *ChunkStream) writeHeader(w *ReadWriter) error {
 	}
 	w.WriteUintLE(chunkStream.StreamID, 4)
 END:
-//Extended Timestamp
+	//Extended Timestamp
 	if ts >= 0xffffff {
 		w.WriteUintBE(chunkStream.Timestamp, 4)
 	}
@@ -211,7 +211,7 @@ func (chunkStream *ChunkStream) readChunk(r *ReadWriter, chunkSize uint32, pool 
 		size = int(chunkSize)
 	}
 
-	buf := chunkStream.Data[chunkStream.index: chunkStream.index+uint32(size)]
+	buf := chunkStream.Data[chunkStream.index : chunkStream.index+uint32(size)]
 	if _, err := r.Read(buf); err != nil {
 		return err
 	}

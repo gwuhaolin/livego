@@ -5,22 +5,25 @@
 - 支持常用的传输协议、文件格式、编码格式；
 
 #### 支持的传输协议
-- [x] RTMP
-- [x] AMF
-- [x] HLS
-- [x] HTTP-FLV
+- RTMP
+- AMF
+- HLS
+- HTTP-FLV
 
 #### 支持的容器格式
-- [x] FLV
-- [x] TS
+- FLV
+- TS
 
 #### 支持的编码格式
-- [x] H264
-- [x] AAC
-- [x] MP3
+- H264
+- AAC
+- MP3
 
 ## 安装
 直接下载编译好的[二进制文件](https://github.com/gwuhaolin/livego/releases)后，在命令行中执行。
+
+#### 从 Docker 启动
+执行`docker run -p 1935:1935 -p 7001:7001 -p 7002:7002 -d --name livego gwuhaolin/livego`启动
 
 #### 从源码编译
 1. 下载源码 `git clone https://github.com/gwuhaolin/livego.git`

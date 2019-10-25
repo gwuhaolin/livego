@@ -2,6 +2,7 @@ package ts
 
 import (
 	"io"
+
 	"github.com/gwuhaolin/livego/av"
 )
 
@@ -207,7 +208,7 @@ func (muxer *Muxer) PMT(soundFormat byte, hasVideo bool) []byte {
 		progInfo = []byte{0x0f, 0xe1, 0x01, 0xf0, 0x00}
 	} else {
 		progInfo = []byte{0x1b, 0xe1, 0x00, 0xf0, 0x00, //h264 or h265*
-				  0x0f, 0xe1, 0x01, 0xf0, 0x00, //mp3 or aac
+			0x0f, 0xe1, 0x01, 0xf0, 0x00, //mp3 or aac
 		}
 	}
 	pmtHeader[2] = byte(len(progInfo) + 9 + 4)
@@ -236,7 +237,7 @@ func (muxer *Muxer) PMT(soundFormat byte, hasVideo bool) []byte {
 	copy(muxer.pmt[i:], progInfo[0:])
 	i += len(progInfo)
 
-	crc32Value := GenCrc32(muxer.pmt[5: 5+len(pmtHeader)+len(progInfo)])
+	crc32Value := GenCrc32(muxer.pmt[5 : 5+len(pmtHeader)+len(progInfo)])
 	muxer.pmt[i] = byte(crc32Value >> 24)
 	i++
 	muxer.pmt[i] = byte(crc32Value >> 16)

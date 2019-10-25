@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/gwuhaolin/livego/protocol/amf"
-	"github.com/gwuhaolin/livego/protocol/rtmp/core"
 	"io"
 	"log"
+
+	"github.com/gwuhaolin/livego/protocol/amf"
+	"github.com/gwuhaolin/livego/protocol/rtmp/core"
 )
 
 var (

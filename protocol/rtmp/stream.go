@@ -2,13 +2,14 @@ package rtmp
 
 import (
 	"errors"
+	"log"
+	"strings"
+	"time"
+
 	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/protocol/rtmp/cache"
 	"github.com/gwuhaolin/livego/protocol/rtmp/rtmprelay"
 	"github.com/orcaman/concurrent-map"
-	"log"
-	"strings"
-	"time"
 )
 
 var (

@@ -1,0 +1,9 @@
+{
+  "server": [
+    {
+      "appname": "live",
+      "liveon": "on",
+      "hlson": "on"
+    }
+  ]
+}
