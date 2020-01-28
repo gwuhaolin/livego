@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/gwuhaolin/livego/utils/uid"
 	"log"
 	"net"
 	"net/url"
@@ -15,7 +16,6 @@ import (
 	"github.com/gwuhaolin/livego/configure"
 	"github.com/gwuhaolin/livego/container/flv"
 	"github.com/gwuhaolin/livego/protocol/rtmp/core"
-	"github.com/gwuhaolin/livego/utils/uid"
 )
 
 const (
@@ -111,7 +111,7 @@ func (s *Server) handleConn(conn *core.Conn) error {
 		return err
 	}
 
-	appname, _, _ := connServer.GetInfo()
+	appname, name, _ := connServer.GetInfo()
 
 	if ret := configure.CheckAppName(appname); !ret {
 		err := errors.New(fmt.Sprintf("application name=%s is not configured", appname))
@@ -122,6 +122,14 @@ func (s *Server) handleConn(conn *core.Conn) error {
 
 	log.Printf("handleConn: IsPublisher=%v", connServer.IsPublisher())
 	if connServer.IsPublisher() {
+		var channel = configure.RoomKeys.GetChannel(name)
+		if channel == "" {
+			err := errors.New(fmt.Sprintf("invalid key"))
+			conn.Close()
+			log.Println("CheckKey err:", err)
+			return err
+		}
+		connServer.PublishInfo.Name = channel
 		if pushlist, ret := configure.GetStaticPushUrlList(appname); ret && (pushlist != nil) {
 			log.Printf("GetStaticPushUrlList: %v", pushlist)
 		}
@@ -138,6 +146,7 @@ func (s *Server) handleConn(conn *core.Conn) error {
 		flvWriter := new(flv.FlvDvr)
 		s.handler.HandleWriter(flvWriter.GetWriter(reader.Info()))
 	} else {
+		configure.RoomKeys.GetKey(name) // set new key if this channel not exists
 		writer := NewVirWriter(connServer)
 		log.Printf("new player: %+v", writer.Info())
 		s.handler.HandleWriter(writer)
