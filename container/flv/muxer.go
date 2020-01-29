@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -16,9 +17,10 @@ import (
 
 var (
 	flvHeader = []byte{0x46, 0x4c, 0x56, 0x01, 0x05, 0x00, 0x00, 0x00, 0x09}
-	flvFile   = flag.String("filFile", "./out.flv", "output flv file name")
+	flvDir   = flag.String("flvDir", "tmp", "output flv file at flvDir/APP/KEY_TIME.flv")
 )
 
+/*
 func NewFlv(handler av.Handler, info av.Info) {
 	patths := strings.SplitN(info.Key, "/", 2)
 
@@ -41,6 +43,7 @@ func NewFlv(handler av.Handler, info av.Info) {
 	log.Println("close flv file")
 	writer.ctx.Close()
 }
+*/
 
 const (
 	headerLen = 11
@@ -144,18 +147,17 @@ type FlvDvr struct{}
 func (f *FlvDvr) GetWriter(info av.Info) av.WriteCloser {
 	paths := strings.SplitN(info.Key, "/", 2)
 	if len(paths) != 2 {
-
 		log.Println("invalid info")
 		return nil
 	}
 
-	err := os.MkdirAll(paths[0], 0755)
+	err := os.MkdirAll(path.Join(*flvDir, paths[0]), 0755)
 	if err != nil {
 		log.Println("mkdir error:", err)
 		return nil
 	}
 
-	fileName := fmt.Sprintf("%s_%d.%s", info.Key, time.Now().Unix(), "flv")
+	fileName := fmt.Sprintf("%s_%d.%s", path.Join(*flvDir, info.Key), time.Now().Unix(), "flv")
 	log.Println("flv dvr save stream to: ", fileName)
 	w, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0755)
 	if err != nil {

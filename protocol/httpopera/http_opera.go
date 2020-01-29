@@ -3,6 +3,7 @@ package httpopera
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gwuhaolin/livego/configure"
 	"io"
 	"log"
 	"net"
@@ -61,13 +62,22 @@ func NewServer(h av.Handler, rtmpAddr string) *Server {
 func (s *Server) Serve(l net.Listener) error {
 	mux := http.NewServeMux()
 
-	mux.Handle("/statics", http.FileServer(http.Dir("statics")))
+	mux.Handle("/statics/",  http.StripPrefix("/statics/", http.FileServer(http.Dir("statics"))))
 
 	mux.HandleFunc("/control/push", func(w http.ResponseWriter, r *http.Request) {
 		s.handlePush(w, r)
 	})
 	mux.HandleFunc("/control/pull", func(w http.ResponseWriter, r *http.Request) {
 		s.handlePull(w, r)
+	})
+	mux.HandleFunc("/control/get", func(w http.ResponseWriter, r *http.Request) {
+		s.handleGet(w, r)
+	})
+	mux.HandleFunc("/control/reset", func(w http.ResponseWriter, r *http.Request) {
+		s.handleReset(w, r)
+	})
+	mux.HandleFunc("/control/delete", func(w http.ResponseWriter, r *http.Request) {
+		s.handleDelete(w, r)
 	})
 	mux.HandleFunc("/stat/livestat", func(w http.ResponseWriter, r *http.Request) {
 		s.GetLiveStatics(w, r)
@@ -78,12 +88,12 @@ func (s *Server) Serve(l net.Listener) error {
 
 type stream struct {
 	Key             string `json:"key"`
-	Url             string `json:"Url"`
-	StreamId        uint32 `json:"StreamId"`
-	VideoTotalBytes uint64 `json:123456`
-	VideoSpeed      uint64 `json:123456`
-	AudioTotalBytes uint64 `json:123456`
-	AudioSpeed      uint64 `json:123456`
+	Url             string `json:"url"`
+	StreamId        uint32 `json:"stream_id"`
+	VideoTotalBytes uint64 `json:"video_total_bytes"`
+	VideoSpeed      uint64 `json:"video_speed"`
+	AudioTotalBytes uint64 `json:"audio_total_bytes"`
+	AudioSpeed      uint64 `json:"audio_speed"`
 }
 
 type streams struct {
@@ -135,12 +145,15 @@ func (server *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 	w.Write(resp)
 }
 
-//http://127.0.0.1:8090/control/push?&oper=start&app=live&name=123456&url=rtmp://192.168.16.136/live/123456
+//http://127.0.0.1:8090/control/pull?&oper=start&app=live&name=123456&url=rtmp://192.168.16.136/live/123456
 func (s *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 	var retString string
 	var err error
 
-	req.ParseForm()
+	if req.ParseForm() != nil {
+		fmt.Fprintf(w, "url: /control/pull?&oper=start&app=live&name=123456&url=rtmp://192.168.16.136/live/123456")
+		return
+	}
 
 	oper := req.Form["oper"]
 	app := req.Form["app"]
@@ -192,7 +205,10 @@ func (s *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 	var retString string
 	var err error
 
-	req.ParseForm()
+	if req.ParseForm() != nil {
+		fmt.Fprintf(w, "url: /control/push?&oper=start&app=live&name=123456&url=rtmp://192.168.16.136/live/123456")
+		return
+	}
 
 	oper := req.Form["oper"]
 	app := req.Form["app"]
@@ -236,5 +252,39 @@ func (s *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 
 		io.WriteString(w, retString)
 		log.Printf("push start return %s", retString)
+	}
+}
+
+//http://127.0.0.1:8090/control/reset?room=ROOM_NAME
+func (s *Server) handleReset(w http.ResponseWriter, r *http.Request) {
+	if r.ParseForm() != nil {
+		fmt.Fprintf(w, "url: /control/reset?room=ROOM_NAME")
+		return
+	}
+	room := r.Form["room"][0]
+	fmt.Fprintf(w, configure.RoomKeys.SetKey(room))
+}
+
+//http://127.0.0.1:8090/control/get?room=ROOM_NAME
+func (s *Server) handleGet(w http.ResponseWriter, r *http.Request) {
+	if r.ParseForm() != nil {
+		fmt.Fprintf(w, "url: /control/get?room=ROOM_NAME")
+		return
+	}
+	room := r.Form["room"][0]
+	fmt.Fprintf(w, configure.RoomKeys.GetKey(room))
+}
+
+//http://127.0.0.1:8090/control/delete?room=ROOM_NAME
+func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
+	if r.ParseForm() != nil {
+		fmt.Fprintf(w, "url: /control/delete?room=ROOM_NAME")
+		return
+	}
+	room := r.Form["room"][0]
+	if configure.RoomKeys.DeleteChannel(room) {
+		fmt.Fprintf(w, "OK")
+	} else {
+		fmt.Fprintf(w, "Room Not Found")
 	}
 }

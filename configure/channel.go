@@ -109,6 +109,26 @@ func (r *RoomKeysType) GetChannel(key string) string {
 	}
 }
 
+func (r *RoomKeysType) DeleteChannel(channel string) bool {
+	key, ok := r.mapChanKey.Load(channel)
+	if ok {
+		r.mapChanKey.Delete(channel)
+		r.mapKeyChan.Delete(key)
+		return true
+	}
+	return false
+}
+
+func (r *RoomKeysType) DeleteKey(key string) bool {
+	channel, ok := r.mapKeyChan.Load(key)
+	if ok {
+		r.mapChanKey.Delete(channel)
+		r.mapKeyChan.Delete(key)
+		return true
+	}
+	return false
+}
+
 
 // helpers
 var letterRunes = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
