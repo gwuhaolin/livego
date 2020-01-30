@@ -2,16 +2,18 @@ package configure
 
 import (
 	"encoding/json"
+	"flag"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"sync"
 	"time"
 )
+var (
+	roomKeySaveFile  = flag.String("keyFile", "room_keys.json", "path to save room keys")
+)
 
-const roomKeySaveFile = "room_keys.json"
-
-var RoomKeys = LoadRoomKey(roomKeySaveFile)
+var RoomKeys = LoadRoomKey(*roomKeySaveFile)
 
 var roomUpdated = false
 
@@ -21,7 +23,7 @@ func init() {
 		for {
 			time.Sleep(15 * time.Second)
 			if roomUpdated {
-				RoomKeys.Save(roomKeySaveFile)
+				RoomKeys.Save(*roomKeySaveFile)
 				roomUpdated = false
 			}
 		}

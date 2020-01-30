@@ -89,7 +89,7 @@ func (s *Server) Serve(l net.Listener) error {
 type stream struct {
 	Key             string `json:"key"`
 	Url             string `json:"url"`
-	StreamId        uint32 `json:"stream_id"`
+	StreamId        uint32 `json:"-"`		// hide
 	VideoTotalBytes uint64 `json:"video_total_bytes"`
 	VideoSpeed      uint64 `json:"video_speed"`
 	AudioTotalBytes uint64 `json:"audio_total_bytes"`
@@ -98,7 +98,7 @@ type stream struct {
 
 type streams struct {
 	Publishers []stream `json:"publishers"`
-	Players    []stream `json:"players"`
+	Players    []stream `json:"-"`			// hide
 }
 
 //http://127.0.0.1:8090/stat/livestat

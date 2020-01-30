@@ -146,7 +146,6 @@ func (s *Server) handleConn(conn *core.Conn) error {
 		flvWriter := new(flv.FlvDvr)
 		s.handler.HandleWriter(flvWriter.GetWriter(reader.Info()))
 	} else {
-		configure.RoomKeys.GetKey(name) // set new key if this channel not exists
 		writer := NewVirWriter(connServer)
 		log.Printf("new player: %+v", writer.Info())
 		s.handler.HandleWriter(writer)
