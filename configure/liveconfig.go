@@ -20,13 +20,19 @@ import (
 */
 
 type Application struct {
-	Appname     string `json:"appname"`
-	Liveon      string `json:"liveon"`
-	Hlson       string `json:"hlson"`
+	Appname    string   `json:"appname"`
+	Liveon     string   `json:"liveon"`
+	Hlson      string   `json:"hlson"`
 	StaticPush []string `json:"static_push"`
 }
 
+type JWTCfg struct {
+	Secret    string `json:"secret"`
+	Algorithm string `json:"algorithm"`
+}
+
 type ServerCfg struct {
+	JWTCfg `json:"jwt"`
 	Server []Application `json:"server"`
 }
 

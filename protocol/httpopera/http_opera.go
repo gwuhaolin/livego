@@ -3,13 +3,15 @@ package httpopera
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gwuhaolin/livego/configure"
 	"io"
 	"log"
 	"net"
 	"net/http"
 
+	jwtmiddleware "github.com/auth0/go-jwt-middleware"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gwuhaolin/livego/av"
+	"github.com/gwuhaolin/livego/configure"
 	"github.com/gwuhaolin/livego/protocol/rtmp"
 	"github.com/gwuhaolin/livego/protocol/rtmp/rtmprelay"
 )
@@ -59,10 +61,38 @@ func NewServer(h av.Handler, rtmpAddr string) *Server {
 	}
 }
 
+func JWTMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if len(configure.RtmpServercfg.JWTCfg.Secret) > 0 {
+			var algorithm jwt.SigningMethod
+			if len(configure.RtmpServercfg.JWTCfg.Algorithm) > 0 {
+				algorithm = jwt.GetSigningMethod(configure.RtmpServercfg.JWTCfg.Algorithm)
+			}
+
+			if algorithm == nil {
+				algorithm = jwt.SigningMethodHS256
+			}
+
+			jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
+				Extractor: jwtmiddleware.FromFirst(jwtmiddleware.FromAuthHeader, jwtmiddleware.FromParameter("jwt")),
+				ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+					return []byte(configure.RtmpServercfg.Secret), nil
+				},
+				SigningMethod: algorithm,
+			})
+
+			jwtMiddleware.HandlerWithNext(w, r, next.ServeHTTP)
+			return
+		}
+		next.ServeHTTP(w, r)
+
+	})
+}
+
 func (s *Server) Serve(l net.Listener) error {
 	mux := http.NewServeMux()
 
-	mux.Handle("/statics/",  http.StripPrefix("/statics/", http.FileServer(http.Dir("statics"))))
+	mux.Handle("/statics/", http.StripPrefix("/statics/", http.FileServer(http.Dir("statics"))))
 
 	mux.HandleFunc("/control/push", func(w http.ResponseWriter, r *http.Request) {
 		s.handlePush(w, r)
@@ -82,14 +112,14 @@ func (s *Server) Serve(l net.Listener) error {
 	mux.HandleFunc("/stat/livestat", func(w http.ResponseWriter, r *http.Request) {
 		s.GetLiveStatics(w, r)
 	})
-	http.Serve(l, mux)
+	http.Serve(l, JWTMiddleware(mux))
 	return nil
 }
 
 type stream struct {
 	Key             string `json:"key"`
 	Url             string `json:"url"`
-	StreamId        uint32 `json:"-"`		// hide
+	StreamId        uint32 `json:"-"` // hide
 	VideoTotalBytes uint64 `json:"video_total_bytes"`
 	VideoSpeed      uint64 `json:"video_speed"`
 	AudioTotalBytes uint64 `json:"audio_total_bytes"`
@@ -98,7 +128,7 @@ type stream struct {
 
 type streams struct {
 	Publishers []stream `json:"publishers"`
-	Players    []stream `json:"-"`			// hide
+	Players    []stream `json:"-"` // hide
 }
 
 //http://127.0.0.1:8090/stat/livestat
