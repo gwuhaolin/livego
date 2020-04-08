@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/auth0/go-jwt-middleware v0.0.0-20190805220309-36081240882b
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/go-redis/redis/v7 v7.2.0
 	github.com/gorilla/mux v1.7.4
 	github.com/orcaman/concurrent-map v0.0.0-20190826125027-8c72a8bb44f6

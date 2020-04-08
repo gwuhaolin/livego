@@ -14,6 +14,7 @@ import (
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	"github.com/dgrijalva/jwt-go"
+	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/mux"
 )
 
@@ -93,6 +94,10 @@ func JWTMiddleware(next http.Handler) http.Handler {
 
 func (s *Server) Serve(l net.Listener) error {
 	router := mux.NewRouter()
+
+	if configure.RtmpServercfg.DashBoard {
+		DashboardHandler{Assets: &assetfs.AssetFS{Asset: genstatic.Asset, AssetInfo: genstatic.AssetInfo, AssetDir: genstatic.AssetDir, Prefix: "static"}}.Append(router)
+	}
 
 	router.Handle("/statics/", http.StripPrefix("/statics/", http.FileServer(http.Dir("statics"))))
 

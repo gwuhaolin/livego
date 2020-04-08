@@ -5,3 +5,5 @@ room_keys.json
 .vscode
 .tmp
 vendor
+node_modules
+build/
