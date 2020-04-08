@@ -15,6 +15,7 @@ import (
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/mux"
 )
 
 type Response struct {
@@ -92,29 +93,29 @@ func JWTMiddleware(next http.Handler) http.Handler {
 }
 
 func (s *Server) Serve(l net.Listener) error {
-	mux := http.NewServeMux()
+	router := mux.NewRouter()
 
-	mux.Handle("/statics/", http.StripPrefix("/statics/", http.FileServer(http.Dir("statics"))))
+	router.Handle("/statics/", http.StripPrefix("/statics/", http.FileServer(http.Dir("statics"))))
 
-	mux.HandleFunc("/control/push", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/control/push", func(w http.ResponseWriter, r *http.Request) {
 		s.handlePush(w, r)
 	})
-	mux.HandleFunc("/control/pull", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/control/pull", func(w http.ResponseWriter, r *http.Request) {
 		s.handlePull(w, r)
 	})
-	mux.HandleFunc("/control/get", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/control/get", func(w http.ResponseWriter, r *http.Request) {
 		s.handleGet(w, r)
 	})
-	mux.HandleFunc("/control/reset", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/control/reset", func(w http.ResponseWriter, r *http.Request) {
 		s.handleReset(w, r)
 	})
-	mux.HandleFunc("/control/delete", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/control/delete", func(w http.ResponseWriter, r *http.Request) {
 		s.handleDelete(w, r)
 	})
-	mux.HandleFunc("/stat/livestat", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/stat/livestat", func(w http.ResponseWriter, r *http.Request) {
 		s.GetLiveStatics(w, r)
 	})
-	http.Serve(l, JWTMiddleware(mux))
+	http.Serve(l, JWTMiddleware(router))
 	return nil
 }
 
