@@ -9,15 +9,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gwuhaolin/livego/av"
-	"github.com/gwuhaolin/livego/protocol/amf"
-	"github.com/gwuhaolin/livego/utils/pio"
-	"github.com/gwuhaolin/livego/utils/uid"
+	"livego/av"
+	"livego/protocol/amf"
+	"livego/utils/pio"
+	"livego/utils/uid"
 )
 
 var (
 	flvHeader = []byte{0x46, 0x4c, 0x56, 0x01, 0x05, 0x00, 0x00, 0x00, 0x09}
-	flvDir   = flag.String("flvDir", "tmp", "output flv file at flvDir/APP/KEY_TIME.flv")
+	flvDir    = flag.String("flvDir", "tmp", "output flv file at flvDir/APP/KEY_TIME.flv")
 )
 
 /*

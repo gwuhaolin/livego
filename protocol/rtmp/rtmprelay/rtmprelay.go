@@ -7,8 +7,8 @@ import (
 	"io"
 	"log"
 
-	"github.com/gwuhaolin/livego/protocol/amf"
-	"github.com/gwuhaolin/livego/protocol/rtmp/core"
+	"livego/protocol/amf"
+	"livego/protocol/rtmp/core"
 )
 
 var (

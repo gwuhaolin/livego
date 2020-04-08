@@ -8,12 +8,13 @@ import (
 	"net"
 	"net/http"
 
+	"livego/av"
+	"livego/configure"
+	"livego/protocol/rtmp"
+	"livego/protocol/rtmp/rtmprelay"
+
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gwuhaolin/livego/av"
-	"github.com/gwuhaolin/livego/configure"
-	"github.com/gwuhaolin/livego/protocol/rtmp"
-	"github.com/gwuhaolin/livego/protocol/rtmp/rtmprelay"
 )
 
 type Response struct {

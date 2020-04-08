@@ -6,11 +6,11 @@ import (
 	"net"
 	"time"
 
-	"github.com/gwuhaolin/livego/configure"
-	"github.com/gwuhaolin/livego/protocol/hls"
-	"github.com/gwuhaolin/livego/protocol/httpflv"
-	"github.com/gwuhaolin/livego/protocol/httpopera"
-	"github.com/gwuhaolin/livego/protocol/rtmp"
+	"livego/configure"
+	"livego/protocol/hls"
+	"livego/protocol/httpflv"
+	"livego/protocol/httpopera"
+	"livego/protocol/rtmp"
 )
 
 var (

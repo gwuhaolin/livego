@@ -11,8 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gwuhaolin/livego/av"
-	"github.com/orcaman/concurrent-map"
+	"livego/av"
+
+	cmap "github.com/orcaman/concurrent-map"
 )
 
 const (

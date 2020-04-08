@@ -6,9 +6,9 @@ import (
 	"log"
 	"sync"
 
-	"github.com/gwuhaolin/livego/av"
-	"github.com/gwuhaolin/livego/configure"
-	"github.com/gwuhaolin/livego/protocol/rtmp/core"
+	"livego/av"
+	"livego/configure"
+	"livego/protocol/rtmp/core"
 )
 
 type StaticPush struct {
