@@ -38,6 +38,6 @@ Run `docker run -p 1935: 1935 -p 7001: 7001 -p 7002: 7002 -d --name livego gwuha
     -`HLS`:` http: //127.0.0.1: 7002 / live / movie.m3u8`
 
 
-### [Use with flv.js] (https://github.com/gwuhaolin/blog/issues/3)
+### [Use with flv.js](https://github.com/gwuhaolin/blog/issues/3)
 
 Interested in Golang? Please see [Golang Chinese Learning Materials Summary] (http://go.wuhaolin.cn/)
