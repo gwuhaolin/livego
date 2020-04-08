@@ -3,7 +3,6 @@ package httpopera
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -18,15 +17,15 @@ import (
 )
 
 type Response struct {
-	w       http.ResponseWriter
-	Status  int    `json:"status"`
-	Message string `json:"message"`
+	w      http.ResponseWriter
+	Status int         `json:"status"`
+	Data   interface{} `json:"data"`
 }
 
 func (r *Response) SendJson() (int, error) {
 	resp, _ := json.Marshal(r)
-	r.w.WriteHeader(r.Status)
 	r.w.Header().Set("Content-Type", "application/json")
+	r.w.WriteHeader(r.Status)
 	return r.w.Write(resp)
 }
 
@@ -135,9 +134,18 @@ type streams struct {
 
 //http://127.0.0.1:8090/stat/livestat
 func (server *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
+	res := &Response{
+		w:      w,
+		Data:   nil,
+		Status: 200,
+	}
+
+	defer res.SendJson()
+
 	rtmpStream := server.handler.(*rtmp.RtmpStream)
 	if rtmpStream == nil {
-		io.WriteString(w, "<h1>Get rtmp stream information error</h1>")
+		res.Status = 500
+		res.Data = "Get rtmp stream information error"
 		return
 	}
 
@@ -172,9 +180,9 @@ func (server *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 	}
+
 	resp, _ := json.Marshal(msgs)
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(resp)
+	res.Data = resp
 }
 
 //http://127.0.0.1:8090/control/pull?&oper=start&app=live&name=123456&url=rtmp://192.168.16.136/live/123456
@@ -182,8 +190,17 @@ func (s *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 	var retString string
 	var err error
 
+	res := &Response{
+		w:      w,
+		Data:   nil,
+		Status: 200,
+	}
+
+	defer res.SendJson()
+
 	if req.ParseForm() != nil {
-		fmt.Fprintf(w, "url: /control/pull?&oper=start&app=live&name=123456&url=rtmp://192.168.16.136/live/123456")
+		res.Status = 400
+		res.Data = "url: /control/pull?&oper=start&app=live&name=123456&url=rtmp://192.168.16.136/live/123456"
 		return
 	}
 
@@ -194,7 +211,8 @@ func (s *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 
 	log.Printf("control pull: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
 	if (len(app) <= 0) || (len(name) <= 0) || (len(url) <= 0) {
-		io.WriteString(w, "control push parameter error, please check them.</br>")
+		res.Status = 400
+		res.Data = "control push parameter error, please check them."
 		return
 	}
 
@@ -207,7 +225,8 @@ func (s *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 
 		if !found {
 			retString = fmt.Sprintf("session key[%s] not exist, please check it again.", keyString)
-			io.WriteString(w, retString)
+			res.Status = 400
+			res.Data = retString
 			return
 		}
 		log.Printf("rtmprelay stop push %s from %s", remoteurl, localurl)
@@ -215,7 +234,8 @@ func (s *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 
 		delete(s.session, keyString)
 		retString = fmt.Sprintf("<h1>push url stop %s ok</h1></br>", url[0])
-		io.WriteString(w, retString)
+		res.Status = 400
+		res.Data = retString
 		log.Printf("pull stop return %s", retString)
 	} else {
 		pullRtmprelay := rtmprelay.NewRtmpRelay(&localurl, &remoteurl)
@@ -227,7 +247,8 @@ func (s *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 			s.session[keyString] = pullRtmprelay
 			retString = fmt.Sprintf("<h1>push url start %s ok</h1></br>", url[0])
 		}
-		io.WriteString(w, retString)
+		res.Status = 400
+		res.Data = retString
 		log.Printf("pull start return %s", retString)
 	}
 }
@@ -237,8 +258,16 @@ func (s *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 	var retString string
 	var err error
 
+	res := &Response{
+		w:      w,
+		Data:   nil,
+		Status: 200,
+	}
+
+	defer res.SendJson()
+
 	if req.ParseForm() != nil {
-		fmt.Fprintf(w, "url: /control/push?&oper=start&app=live&name=123456&url=rtmp://192.168.16.136/live/123456")
+		res.Data = "url: /control/push?&oper=start&app=live&name=123456&url=rtmp://192.168.16.136/live/123456"
 		return
 	}
 
@@ -249,7 +278,7 @@ func (s *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 
 	log.Printf("control push: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
 	if (len(app) <= 0) || (len(name) <= 0) || (len(url) <= 0) {
-		io.WriteString(w, "control push parameter error, please check them.</br>")
+		res.Data = "control push parameter error, please check them."
 		return
 	}
 
@@ -261,7 +290,7 @@ func (s *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 		pushRtmprelay, found := s.session[keyString]
 		if !found {
 			retString = fmt.Sprintf("<h1>session key[%s] not exist, please check it again.</h1>", keyString)
-			io.WriteString(w, retString)
+			res.Data = retString
 			return
 		}
 		log.Printf("rtmprelay stop push %s from %s", remoteurl, localurl)
@@ -269,7 +298,7 @@ func (s *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 
 		delete(s.session, keyString)
 		retString = fmt.Sprintf("<h1>push url stop %s ok</h1></br>", url[0])
-		io.WriteString(w, retString)
+		res.Data = retString
 		log.Printf("push stop return %s", retString)
 	} else {
 		pushRtmprelay := rtmprelay.NewRtmpRelay(&localurl, &remoteurl)
@@ -282,69 +311,101 @@ func (s *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 			s.session[keyString] = pushRtmprelay
 		}
 
-		io.WriteString(w, retString)
+		res.Data = retString
 		log.Printf("push start return %s", retString)
 	}
 }
 
 //http://127.0.0.1:8090/control/reset?room=ROOM_NAME
 func (s *Server) handleReset(w http.ResponseWriter, r *http.Request) {
-	if r.ParseForm() != nil {
-		fmt.Fprintf(w, "url: /control/reset?room=ROOM_NAME")
+	res := &Response{
+		w:      w,
+		Data:   nil,
+		Status: 200,
+	}
+	defer res.SendJson()
+
+	if err := r.ParseForm(); err != nil {
+		res.Status = 400
+		res.Data = "url: /control/reset?room=ROOM_NAME"
 		return
 	}
-	room := r.Form["room"][0]
+	room := r.Form.Get("room")
 
-	status := 200
+	if len(room) == 0 {
+		res.Status = 400
+		res.Data = "url: /control/get?room=ROOM_NAME"
+		return
+	}
+
 	msg, err := configure.RoomKeys.SetKey(room)
 
 	if err != nil {
 		msg = err.Error()
-		status = 400
+		res.Status = 400
 	}
 
-	res := &Response{
-		w:       w,
-		Message: msg,
-		Status:  status,
-	}
-	res.SendJson()
+	res.Data = msg
 }
 
 //http://127.0.0.1:8090/control/get?room=ROOM_NAME
 func (s *Server) handleGet(w http.ResponseWriter, r *http.Request) {
-	if r.ParseForm() != nil {
-		fmt.Fprintf(w, "url: /control/get?room=ROOM_NAME")
+	res := &Response{
+		w:      w,
+		Data:   nil,
+		Status: 200,
+	}
+	defer res.SendJson()
+
+	if err := r.ParseForm(); err != nil {
+		res.Status = 400
+		res.Data = "url: /control/get?room=ROOM_NAME"
 		return
 	}
-	room := r.Form["room"][0]
 
-	status := 200
+	room := r.Form.Get("room")
+
+	if len(room) == 0 {
+		res.Status = 400
+		res.Data = "url: /control/get?room=ROOM_NAME"
+		return
+	}
+
 	msg, err := configure.RoomKeys.GetKey(room)
-
 	if err != nil {
 		msg = err.Error()
-		status = 400
+		res.Status = 400
 	}
-
-	res := &Response{
-		w:       w,
-		Message: msg,
-		Status:  status,
-	}
-	res.SendJson()
+	res.Data = msg
 }
 
 //http://127.0.0.1:8090/control/delete?room=ROOM_NAME
 func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
-	if r.ParseForm() != nil {
-		fmt.Fprintf(w, "url: /control/delete?room=ROOM_NAME")
+	res := &Response{
+		w:      w,
+		Data:   nil,
+		Status: 200,
+	}
+	defer res.SendJson()
+
+	if err := r.ParseForm(); err != nil {
+		res.Status = 400
+		res.Data = "url: /control/delete?room=ROOM_NAME"
 		return
 	}
-	room := r.Form["room"][0]
-	if configure.RoomKeys.DeleteChannel(room) {
-		fmt.Fprintf(w, "OK")
-	} else {
-		fmt.Fprintf(w, "Room Not Found")
+
+	room := r.Form.Get("room")
+
+	if len(room) == 0 {
+		res.Status = 400
+		res.Data = "url: /control/get?room=ROOM_NAME"
+		return
 	}
+
+	if configure.RoomKeys.DeleteChannel(room) {
+		res.Data = "Ok"
+		return
+	}
+	res.Status = 404
+	res.Data = "Room not found"
 }
