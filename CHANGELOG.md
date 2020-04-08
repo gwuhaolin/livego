@@ -24,6 +24,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         ]
     }
 ```
+- Use redis for store room keys
+``` json 
+    // .livego.json
+    {
+        "redis_addr": "localhost:6379", 
+        "server": [
+            {
+                "appname": "live",
+                "liveon": "on",
+                "hlson": "on"
+            }
+        ]
+    }
+```
 
 ### Changed
 - Show `players`.

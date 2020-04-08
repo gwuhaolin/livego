@@ -2,6 +2,7 @@ package configure
 
 import (
 	"encoding/json"
+	"flag"
 	"io/ioutil"
 	"log"
 )
@@ -18,6 +19,11 @@ import (
   ]
 }
 */
+var (
+	roomKeySaveFile = flag.String("KeyFile", "room_keys.json", "path to save room keys")
+	RedisAddr       = flag.String("redis_addr", "", "redis addr to save room keys ex. localhost:6379")
+	RedisPwd        = flag.String("redis_pwd", "", "redis password")
+)
 
 type Application struct {
 	Appname    string   `json:"appname"`
@@ -32,8 +38,11 @@ type JWTCfg struct {
 }
 
 type ServerCfg struct {
-	JWTCfg `json:"jwt"`
-	Server []Application `json:"server"`
+	KeyFile   string `json:"key_file"`
+	RedisAddr string `json:"redis_addr"`
+	RedisPwd  string `json:"redis_pwd"`
+	JWTCfg    `json:"jwt"`
+	Server    []Application `json:"server"`
 }
 
 var RtmpServercfg ServerCfg
@@ -54,7 +63,38 @@ func LoadConfig(configfilename string) error {
 		return err
 	}
 	log.Printf("get config json data:%v", RtmpServercfg)
+
+	Init()
+
 	return nil
+}
+
+func GetKeyFile() *string {
+	if len(RtmpServercfg.KeyFile) > 0 {
+		*roomKeySaveFile = RtmpServercfg.KeyFile
+	}
+
+	return roomKeySaveFile
+}
+
+func GetRedisAddr() *string {
+	if len(RtmpServercfg.RedisAddr) > 0 {
+		*RedisAddr = RtmpServercfg.RedisAddr
+	}
+
+	if len(*RedisAddr) == 0 {
+		return nil
+	}
+
+	return RedisAddr
+}
+
+func GetRedisPwd() *string {
+	if len(RtmpServercfg.RedisPwd) > 0 {
+		*RedisPwd = RtmpServercfg.RedisPwd
+	}
+
+	return RedisPwd
 }
 
 func CheckAppName(appname string) bool {

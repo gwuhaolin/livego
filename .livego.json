@@ -1,4 +1,5 @@
 {
+  "redis_addr": "localhost:6379",
   "server": [
     {
       "appname": "live",

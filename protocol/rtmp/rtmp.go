@@ -4,13 +4,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/gwuhaolin/livego/utils/uid"
 	"log"
 	"net"
 	"net/url"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/gwuhaolin/livego/utils/uid"
 
 	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/configure"
@@ -122,8 +123,8 @@ func (s *Server) handleConn(conn *core.Conn) error {
 
 	log.Printf("handleConn: IsPublisher=%v", connServer.IsPublisher())
 	if connServer.IsPublisher() {
-		var channel = configure.RoomKeys.GetChannel(name)
-		if channel == "" {
+		channel, err := configure.RoomKeys.GetChannel(name)
+		if err != nil {
 			err := errors.New(fmt.Sprintf("invalid key"))
 			conn.Close()
 			log.Println("CheckKey err:", err)

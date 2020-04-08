@@ -2,3 +2,5 @@
 .idea
 dist
 room_keys.json
+.vscode
+.tmp

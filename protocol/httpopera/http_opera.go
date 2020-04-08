@@ -24,6 +24,7 @@ type Response struct {
 
 func (r *Response) SendJson() (int, error) {
 	resp, _ := json.Marshal(r)
+	r.w.WriteHeader(r.Status)
 	r.w.Header().Set("Content-Type", "application/json")
 	return r.w.Write(resp)
 }
@@ -292,7 +293,21 @@ func (s *Server) handleReset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	room := r.Form["room"][0]
-	fmt.Fprintf(w, configure.RoomKeys.SetKey(room))
+
+	status := 200
+	msg, err := configure.RoomKeys.SetKey(room)
+
+	if err != nil {
+		msg = err.Error()
+		status = 400
+	}
+
+	res := &Response{
+		w:       w,
+		Message: msg,
+		Status:  status,
+	}
+	res.SendJson()
 }
 
 //http://127.0.0.1:8090/control/get?room=ROOM_NAME
@@ -302,7 +317,21 @@ func (s *Server) handleGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	room := r.Form["room"][0]
-	fmt.Fprintf(w, configure.RoomKeys.GetKey(room))
+
+	status := 200
+	msg, err := configure.RoomKeys.GetKey(room)
+
+	if err != nil {
+		msg = err.Error()
+		status = 400
+	}
+
+	res := &Response{
+		w:       w,
+		Message: msg,
+		Status:  status,
+	}
+	res.SendJson()
 }
 
 //http://127.0.0.1:8090/control/delete?room=ROOM_NAME
