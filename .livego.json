@@ -1,8 +1,4 @@
 {
-  "jwt": {
-    "secret": "testing",
-    "algorithm": "HS256s"
-  },
   "server": [
     {
       "appname": "live",
