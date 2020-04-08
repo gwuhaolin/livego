@@ -6,7 +6,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o livego ./
 
 FROM alpine:latest
-LABEL maintainer="gwuhaolin <gwuhaolin@gmail.com>"
+LABEL maintainer="Ruben Cid Lara <rubencidlara@gmail.com>"
 ENV RTMP_PORT 1935
 ENV HTTP_FLV_PORT 7001
 ENV HLS_PORT 7002
