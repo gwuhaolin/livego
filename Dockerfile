@@ -6,7 +6,6 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o livego .
 
 FROM alpine:latest
-LABEL maintainer="Ruben Cid Lara <rubencidlara@gmail.com>"
 RUN mkdir -p /app/config
 WORKDIR /app
 ENV RTMP_PORT 1935

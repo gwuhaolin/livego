@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"livego/configure"
+	"livego/protocol/api"
 	"livego/protocol/hls"
 	"livego/protocol/httpflv"
-	"livego/protocol/httpopera"
 	"livego/protocol/rtmp"
 )
 
@@ -89,20 +89,20 @@ func startHTTPFlv(stream *rtmp.RtmpStream) {
 	}()
 }
 
-func startHTTPOpera(stream *rtmp.RtmpStream) {
+func startAPI(stream *rtmp.RtmpStream) {
 	if *operaAddr != "" {
 		opListen, err := net.Listen("tcp", *operaAddr)
 		if err != nil {
 			log.Fatal(err)
 		}
-		opServer := httpopera.NewServer(stream, *rtmpAddr)
+		opServer := api.NewServer(stream, *rtmpAddr)
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
-					log.Println("HTTP-Operation server panic: ", r)
+					log.Println("HTTP-API server panic: ", r)
 				}
 			}()
-			log.Println("HTTP-Operation listen On", *operaAddr)
+			log.Println("HTTP-API listen On", *operaAddr)
 			opServer.Serve(opListen)
 		}()
 	}
@@ -124,7 +124,7 @@ func main() {
 	stream := rtmp.NewRtmpStream()
 	hlsServer := startHls()
 	startHTTPFlv(stream)
-	startHTTPOpera(stream)
+	startAPI(stream)
 
 	startRtmp(stream, hlsServer)
 	//startRtmp(stream, nil)

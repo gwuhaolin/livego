@@ -1,4 +1,4 @@
-package httpopera
+package api
 
 import (
 	"encoding/json"
@@ -327,14 +327,14 @@ func (s *Server) handleReset(w http.ResponseWriter, r *http.Request) {
 
 	if err := r.ParseForm(); err != nil {
 		res.Status = 400
-		res.Data = "url: /control/reset?room=ROOM_NAME"
+		res.Data = "url: /control/reset?room=<ROOM_NAME>"
 		return
 	}
 	room := r.Form.Get("room")
 
 	if len(room) == 0 {
 		res.Status = 400
-		res.Data = "url: /control/get?room=ROOM_NAME"
+		res.Data = "url: /control/get?room=<ROOM_NAME>"
 		return
 	}
 
@@ -359,7 +359,7 @@ func (s *Server) handleGet(w http.ResponseWriter, r *http.Request) {
 
 	if err := r.ParseForm(); err != nil {
 		res.Status = 400
-		res.Data = "url: /control/get?room=ROOM_NAME"
+		res.Data = "url: /control/get?room=<ROOM_NAME>"
 		return
 	}
 
@@ -367,7 +367,7 @@ func (s *Server) handleGet(w http.ResponseWriter, r *http.Request) {
 
 	if len(room) == 0 {
 		res.Status = 400
-		res.Data = "url: /control/get?room=ROOM_NAME"
+		res.Data = "url: /control/get?room=<ROOM_NAME>"
 		return
 	}
 
@@ -390,7 +390,7 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 
 	if err := r.ParseForm(); err != nil {
 		res.Status = 400
-		res.Data = "url: /control/delete?room=ROOM_NAME"
+		res.Data = "url: /control/delete?room=<ROOM_NAME>"
 		return
 	}
 
@@ -398,7 +398,7 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 
 	if len(room) == 0 {
 		res.Status = 400
-		res.Data = "url: /control/get?room=ROOM_NAME"
+		res.Data = "url: /control/get?room=<ROOM_NAME>"
 		return
 	}
 
@@ -407,5 +407,5 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	res.Status = 404
-	res.Data = "Room not found"
+	res.Data = "room not found"
 }

@@ -20,9 +20,8 @@ import (
 }
 */
 var (
-	roomKeySaveFile = flag.String("KeyFile", "room_keys.json", "path to save room keys")
-	RedisAddr       = flag.String("redis_addr", "", "redis addr to save room keys ex. localhost:6379")
-	RedisPwd        = flag.String("redis_pwd", "", "redis password")
+	redisAddr = flag.String("redis_addr", "", "redis addr to save room keys ex. localhost:6379")
+	redisPwd  = flag.String("redis_pwd", "", "redis password")
 )
 
 type Application struct {
@@ -31,14 +30,11 @@ type Application struct {
 	Hlson      string   `json:"hlson"`
 	StaticPush []string `json:"static_push"`
 }
-
 type JWTCfg struct {
 	Secret    string `json:"secret"`
 	Algorithm string `json:"algorithm"`
 }
-
 type ServerCfg struct {
-	KeyFile   string `json:"key_file"`
 	RedisAddr string `json:"redis_addr"`
 	RedisPwd  string `json:"redis_pwd"`
 	JWTCfg    `json:"jwt"`
@@ -69,32 +65,24 @@ func LoadConfig(configfilename string) error {
 	return nil
 }
 
-func GetKeyFile() *string {
-	if len(RtmpServercfg.KeyFile) > 0 {
-		*roomKeySaveFile = RtmpServercfg.KeyFile
-	}
-
-	return roomKeySaveFile
-}
-
 func GetRedisAddr() *string {
 	if len(RtmpServercfg.RedisAddr) > 0 {
-		*RedisAddr = RtmpServercfg.RedisAddr
+		*redisAddr = RtmpServercfg.RedisAddr
 	}
 
-	if len(*RedisAddr) == 0 {
+	if len(*redisAddr) == 0 {
 		return nil
 	}
 
-	return RedisAddr
+	return redisAddr
 }
 
 func GetRedisPwd() *string {
 	if len(RtmpServercfg.RedisPwd) > 0 {
-		*RedisPwd = RtmpServercfg.RedisPwd
+		*redisPwd = RtmpServercfg.RedisPwd
 	}
 
-	return RedisPwd
+	return redisPwd
 }
 
 func CheckAppName(appname string) bool {
