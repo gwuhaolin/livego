@@ -9,13 +9,14 @@ import (
 
 	"livego/av"
 	"livego/configure"
+	"livego/protocol/dashboard"
 	"livego/protocol/rtmp"
 	"livego/protocol/rtmp/rtmprelay"
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	"github.com/dgrijalva/jwt-go"
-	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/mux"
+	"github.com/markbates/pkger"
 )
 
 type Response struct {
@@ -88,18 +89,22 @@ func JWTMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		next.ServeHTTP(w, r)
-
 	})
 }
 
 func (s *Server) Serve(l net.Listener) error {
 	router := mux.NewRouter()
 
-	if configure.RtmpServercfg.DashBoard {
-		DashboardHandler{Assets: &assetfs.AssetFS{Asset: genstatic.Asset, AssetInfo: genstatic.AssetInfo, AssetDir: genstatic.AssetDir, Prefix: "static"}}.Append(router)
+	if configure.ShowDashboard() {
+		log.Printf("DASHBOARD On /dashboard")
+
+		dir := pkger.Dir("/static")
+		dashboard.DashboardHandler{Assets: &dir}.Append(router)
+	} else {
+		log.Printf("DASHBOARD Off")
 	}
 
-	router.Handle("/statics/", http.StripPrefix("/statics/", http.FileServer(http.Dir("statics"))))
+	// router.Handle("/statics/", http.StripPrefix("/statics/", http.FileServer(http.Dir("statics"))))
 
 	router.HandleFunc("/control/push", func(w http.ResponseWriter, r *http.Request) {
 		s.handlePush(w, r)

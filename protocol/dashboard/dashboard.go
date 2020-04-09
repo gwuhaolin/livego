@@ -4,13 +4,13 @@ import (
 	"log"
 	"net/http"
 
-	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/mux"
+	"github.com/markbates/pkger"
 )
 
 // DashboardHandler expose dashboard routes
 type DashboardHandler struct {
-	Assets *assetfs.AssetFS
+	Assets *pkger.Dir
 }
 
 // Append add dashboard routes on a router

@@ -3,7 +3,11 @@
 dist
 room_keys.json
 .vscode
-.tmp
-vendor
-node_modules
+.tmp/
+vendor/
+node_modules/
 build/
+livego
+static/
+webui/.tmp/
+pkged.go

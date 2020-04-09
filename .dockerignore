@@ -1,0 +1,6 @@
+dist/
+site/
+vendor/
+.idea/
+.vscode/
+room_keys.json
