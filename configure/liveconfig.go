@@ -37,7 +37,6 @@ type JWTCfg struct {
 }
 type ServerCfg struct {
 	DashBoard bool   `json:"dashboard"`
-	KeyFile   string `json:"key_file"`
 	RedisAddr string `json:"redis_addr"`
 	RedisPwd  string `json:"redis_pwd"`
 	JWTCfg    `json:"jwt"`

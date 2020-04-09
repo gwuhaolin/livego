@@ -27,6 +27,10 @@ func Init() {
 		localCache: cache.New(cache.NoExpiration, 0),
 	}
 
+	if saveInLocal {
+		return
+	}
+
 	RoomKeys.redisCli = redis.NewClient(&redis.Options{
 		Addr:     *GetRedisAddr(),
 		Password: *GetRedisPwd(),
