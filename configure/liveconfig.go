@@ -20,11 +20,11 @@ import (
 }
 */
 var (
-	roomKeySaveFile = flag.String("KeyFile", "room_keys.json", "path to save room keys")
-	redisAddr       = flag.String("redis_addr", "", "redis addr to save room keys ex. localhost:6379")
-	redisPwd        = flag.String("redis_pwd", "", "redis password")
-	dashboard       = flag.Bool("dashboard", false, "Enable dashboard ui")
+	redisAddr = flag.String("redis_addr", "", "redis addr to save room keys ex. localhost:6379")
+	redisPwd  = flag.String("redis_pwd", "", "redis password")
+	dashboard = flag.Bool("dashboard", false, "Enable dashboard ui")
 )
+
 type Application struct {
 	Appname    string   `json:"appname"`
 	Liveon     string   `json:"liveon"`
@@ -66,14 +66,6 @@ func LoadConfig(configfilename string) error {
 	Init()
 
 	return nil
-}
-
-func GetKeyFile() *string {
-	if len(RtmpServercfg.KeyFile) > 0 {
-		*roomKeySaveFile = RtmpServercfg.KeyFile
-	}
-
-	return roomKeySaveFile
 }
 
 func GetRedisAddr() *string {
