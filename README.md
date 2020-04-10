@@ -2,7 +2,6 @@
 
 <img src='./logo.png' width='130px' height='50px'/>
 
-# livego
 Simple and efficient live broadcast server:
 - Very simple to install and use;
 - Pure Golang, high performance, cross-platform;
