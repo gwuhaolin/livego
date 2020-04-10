@@ -3,7 +3,7 @@ package cache
 import (
 	"errors"
 
-	"github.com/gwuhaolin/livego/av"
+	"livego/av"
 )
 
 var (

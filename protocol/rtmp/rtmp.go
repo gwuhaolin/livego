@@ -11,11 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gwuhaolin/livego/av"
-	"github.com/gwuhaolin/livego/configure"
-	"github.com/gwuhaolin/livego/container/flv"
-	"github.com/gwuhaolin/livego/protocol/rtmp/core"
-	"github.com/gwuhaolin/livego/utils/uid"
+	"livego/utils/uid"
+
+	"livego/av"
+	"livego/configure"
+	"livego/container/flv"
+	"livego/protocol/rtmp/core"
 )
 
 const (
@@ -111,7 +112,7 @@ func (s *Server) handleConn(conn *core.Conn) error {
 		return err
 	}
 
-	appname, _, _ := connServer.GetInfo()
+	appname, name, _ := connServer.GetInfo()
 
 	if ret := configure.CheckAppName(appname); !ret {
 		err := errors.New(fmt.Sprintf("application name=%s is not configured", appname))
@@ -122,6 +123,14 @@ func (s *Server) handleConn(conn *core.Conn) error {
 
 	log.Printf("handleConn: IsPublisher=%v", connServer.IsPublisher())
 	if connServer.IsPublisher() {
+		channel, err := configure.RoomKeys.GetChannel(name)
+		if err != nil {
+			err := errors.New(fmt.Sprintf("invalid key"))
+			conn.Close()
+			log.Println("CheckKey err:", err)
+			return err
+		}
+		connServer.PublishInfo.Name = channel
 		if pushlist, ret := configure.GetStaticPushUrlList(appname); ret && (pushlist != nil) {
 			log.Printf("GetStaticPushUrlList: %v", pushlist)
 		}

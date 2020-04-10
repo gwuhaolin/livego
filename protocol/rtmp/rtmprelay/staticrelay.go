@@ -6,9 +6,9 @@ import (
 	"log"
 	"sync"
 
-	"github.com/gwuhaolin/livego/av"
-	"github.com/gwuhaolin/livego/configure"
-	"github.com/gwuhaolin/livego/protocol/rtmp/core"
+	"livego/av"
+	"livego/configure"
+	"livego/protocol/rtmp/core"
 )
 
 type StaticPush struct {
@@ -63,7 +63,7 @@ func GetStaticPushObject(rtmpurl string) (*StaticPush, error) {
 	}
 	g_MapLock.RUnlock()
 
-	return nil, errors.New(fmt.Sprintf("G_StaticPushMap[%s] not exist...."))
+	return nil, errors.New(fmt.Sprintf("G_StaticPushMap[%s] not exist....", rtmpurl))
 }
 
 func ReleaseStaticPushObject(rtmpurl string) {
