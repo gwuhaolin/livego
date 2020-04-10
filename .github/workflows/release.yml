@@ -1,5 +1,7 @@
 name: release
-on: [push]
+on:
+  release:
+    types: [published]
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
