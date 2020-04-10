@@ -3,16 +3,14 @@ package configure
 import (
 	"fmt"
 	"log"
-	"math/rand"
+
+	"livego/utils/uid"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/patrickmn/go-cache"
 )
 
 var RoomKeys *RoomKeysType
-
-var roomUpdated = false
-
 var saveInLocal = true
 
 type RoomKeysType struct {
@@ -49,7 +47,7 @@ func Init() {
 func (r *RoomKeysType) SetKey(channel string) (key string, err error) {
 	if !saveInLocal {
 		for {
-			key = randStringRunes(48)
+			key = uid.RandStringRunes(48)
 			if _, err = r.redisCli.Get(key).Result(); err == redis.Nil {
 				err = r.redisCli.Set(channel, key, 0).Err()
 				if err != nil {
@@ -65,14 +63,13 @@ func (r *RoomKeysType) SetKey(channel string) (key string, err error) {
 	}
 
 	for {
-		key = randStringRunes(48)
+		key = uid.RandStringRunes(48)
 		if _, found := r.localCache.Get(key); !found {
 			r.localCache.SetDefault(channel, key)
 			r.localCache.SetDefault(key, channel)
 			break
 		}
 	}
-	roomUpdated = true
 	return
 }
 
@@ -136,15 +133,4 @@ func (r *RoomKeysType) DeleteKey(key string) bool {
 		return true
 	}
 	return false
-}
-
-// helpers
-var letterRunes = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-func randStringRunes(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
 }

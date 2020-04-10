@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - JSON Web Token support.
 ``` json 
-    // .livego.json
+    // livego.json
     {
         "jwt": {
             "secret": "testing",
@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ```
 - Use redis for store room keys
 ``` json 
-    // .livego.json
+    // livego.json
     {
         "redis_addr": "localhost:6379", 
         "server": [
@@ -42,4 +42,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Show `players`.
 - Show `stream_id`.
-- Deleted keys saved in physical file, now the keys are in cached using `go-cache`
+- Deleted keys saved in physical file, now the keys are in cached using `go-cache` by default.
