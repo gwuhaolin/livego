@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 
@@ -14,6 +13,7 @@ import (
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	"github.com/dgrijalva/jwt-go"
+	log "github.com/sirupsen/logrus"
 )
 
 type Response struct {
@@ -204,23 +204,23 @@ func (s *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	oper := req.Form["oper"]
-	app := req.Form["app"]
-	name := req.Form["name"]
-	url := req.Form["url"]
+	oper := req.Form.Get("oper")
+	app := req.Form.Get("app")
+	name := req.Form.Get("name")
+	url := req.Form.Get("url")
 
-	log.Printf("control pull: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
+	log.Debugf("control pull: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
 	if (len(app) <= 0) || (len(name) <= 0) || (len(url) <= 0) {
 		res.Status = 400
 		res.Data = "control push parameter error, please check them."
 		return
 	}
 
-	remoteurl := "rtmp://127.0.0.1" + s.rtmpAddr + "/" + app[0] + "/" + name[0]
-	localurl := url[0]
+	remoteurl := "rtmp://127.0.0.1" + s.rtmpAddr + "/" + app + "/" + name
+	localurl := url
 
-	keyString := "pull:" + app[0] + "/" + name[0]
-	if oper[0] == "stop" {
+	keyString := "pull:" + app + "/" + name
+	if oper == "stop" {
 		pullRtmprelay, found := s.session[keyString]
 
 		if !found {
@@ -229,27 +229,27 @@ func (s *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 			res.Data = retString
 			return
 		}
-		log.Printf("rtmprelay stop push %s from %s", remoteurl, localurl)
+		log.Debugf("rtmprelay stop push %s from %s", remoteurl, localurl)
 		pullRtmprelay.Stop()
 
 		delete(s.session, keyString)
-		retString = fmt.Sprintf("<h1>push url stop %s ok</h1></br>", url[0])
+		retString = fmt.Sprintf("<h1>push url stop %s ok</h1></br>", url)
 		res.Status = 400
 		res.Data = retString
-		log.Printf("pull stop return %s", retString)
+		log.Debugf("pull stop return %s", retString)
 	} else {
 		pullRtmprelay := rtmprelay.NewRtmpRelay(&localurl, &remoteurl)
-		log.Printf("rtmprelay start push %s from %s", remoteurl, localurl)
+		log.Debugf("rtmprelay start push %s from %s", remoteurl, localurl)
 		err = pullRtmprelay.Start()
 		if err != nil {
 			retString = fmt.Sprintf("push error=%v", err)
 		} else {
 			s.session[keyString] = pullRtmprelay
-			retString = fmt.Sprintf("<h1>push url start %s ok</h1></br>", url[0])
+			retString = fmt.Sprintf("<h1>push url start %s ok</h1></br>", url)
 		}
 		res.Status = 400
 		res.Data = retString
-		log.Printf("pull start return %s", retString)
+		log.Debugf("pull start return %s", retString)
 	}
 }
 
@@ -271,48 +271,48 @@ func (s *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	oper := req.Form["oper"]
-	app := req.Form["app"]
-	name := req.Form["name"]
-	url := req.Form["url"]
+	oper := req.Form.Get("oper")
+	app := req.Form.Get("app")
+	name := req.Form.Get("name")
+	url := req.Form.Get("url")
 
-	log.Printf("control push: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
+	log.Debugf("control push: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
 	if (len(app) <= 0) || (len(name) <= 0) || (len(url) <= 0) {
 		res.Data = "control push parameter error, please check them."
 		return
 	}
 
-	localurl := "rtmp://127.0.0.1" + s.rtmpAddr + "/" + app[0] + "/" + name[0]
-	remoteurl := url[0]
+	localurl := "rtmp://127.0.0.1" + s.rtmpAddr + "/" + app + "/" + name
+	remoteurl := url
 
-	keyString := "push:" + app[0] + "/" + name[0]
-	if oper[0] == "stop" {
+	keyString := "push:" + app + "/" + name
+	if oper == "stop" {
 		pushRtmprelay, found := s.session[keyString]
 		if !found {
 			retString = fmt.Sprintf("<h1>session key[%s] not exist, please check it again.</h1>", keyString)
 			res.Data = retString
 			return
 		}
-		log.Printf("rtmprelay stop push %s from %s", remoteurl, localurl)
+		log.Debugf("rtmprelay stop push %s from %s", remoteurl, localurl)
 		pushRtmprelay.Stop()
 
 		delete(s.session, keyString)
-		retString = fmt.Sprintf("<h1>push url stop %s ok</h1></br>", url[0])
+		retString = fmt.Sprintf("<h1>push url stop %s ok</h1></br>", url)
 		res.Data = retString
-		log.Printf("push stop return %s", retString)
+		log.Debugf("push stop return %s", retString)
 	} else {
 		pushRtmprelay := rtmprelay.NewRtmpRelay(&localurl, &remoteurl)
-		log.Printf("rtmprelay start push %s from %s", remoteurl, localurl)
+		log.Debugf("rtmprelay start push %s from %s", remoteurl, localurl)
 		err = pushRtmprelay.Start()
 		if err != nil {
 			retString = fmt.Sprintf("push error=%v", err)
 		} else {
-			retString = fmt.Sprintf("<h1>push url start %s ok</h1></br>", url[0])
+			retString = fmt.Sprintf("<h1>push url start %s ok</h1></br>", url)
 			s.session[keyString] = pushRtmprelay
 		}
 
 		res.Data = retString
-		log.Printf("push start return %s", retString)
+		log.Debugf("push start return %s", retString)
 	}
 }
 
@@ -334,7 +334,7 @@ func (s *Server) handleReset(w http.ResponseWriter, r *http.Request) {
 
 	if len(room) == 0 {
 		res.Status = 400
-		res.Data = "url: /control/get?room=<ROOM_NAME>"
+		res.Data = "url: /control/reset?room=<ROOM_NAME>"
 		return
 	}
 
@@ -398,7 +398,7 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 
 	if len(room) == 0 {
 		res.Status = 400
-		res.Data = "url: /control/get?room=<ROOM_NAME>"
+		res.Data = "url: /control/delete?room=<ROOM_NAME>"
 		return
 	}
 

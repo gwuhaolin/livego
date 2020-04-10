@@ -2,10 +2,11 @@ package cache
 
 import (
 	"bytes"
-	"log"
 
 	"livego/av"
 	"livego/protocol/amf"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (

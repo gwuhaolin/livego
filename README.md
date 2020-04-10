@@ -30,7 +30,7 @@ Run `docker run -p 1935:1935 -p 7001:7001 -p 7002:7002 -d --name livego gwuhaoli
 
 #### Compile from source
 1. Download the source code `git clone https://github.com/gwuhaolin/livego.git`
-2. Go to the livego directory and execute `go build`
+2. Go to the livego directory and execute `go build` or `make run`
 
 ## Use
 2. Start the service: execute the livego binary file to start the livego service;

@@ -2,29 +2,27 @@ package configure
 
 import (
 	"fmt"
-	"log"
 
 	"livego/utils/uid"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/patrickmn/go-cache"
+	log "github.com/sirupsen/logrus"
 )
-
-var RoomKeys *RoomKeysType
-var saveInLocal = true
 
 type RoomKeysType struct {
 	redisCli   *redis.Client
 	localCache *cache.Cache
 }
 
+var RoomKeys = &RoomKeysType{
+	localCache: cache.New(cache.NoExpiration, 0),
+}
+
+var saveInLocal = true
+
 func Init() {
 	saveInLocal = GetRedisAddr() == nil
-
-	RoomKeys = &RoomKeysType{
-		localCache: cache.New(cache.NoExpiration, 0),
-	}
-
 	if saveInLocal {
 		return
 	}
@@ -37,10 +35,10 @@ func Init() {
 
 	_, err := RoomKeys.redisCli.Ping().Result()
 	if err != nil {
-		panic(err)
+		log.Panic("Redis: ", err)
 	}
 
-	log.Printf("Redis connected")
+	log.Debug("Redis connected")
 }
 
 // set/reset a random key for channel
@@ -77,7 +75,7 @@ func (r *RoomKeysType) GetKey(channel string) (newKey string, err error) {
 	if !saveInLocal {
 		if newKey, err = r.redisCli.Get(channel).Result(); err == redis.Nil {
 			newKey, err = r.SetKey(channel)
-			log.Printf("[KEY] new channel [%s]: %s", channel, newKey)
+			log.Debugf("[KEY] new channel [%s]: %s", channel, newKey)
 			return
 		}
 
@@ -90,7 +88,7 @@ func (r *RoomKeysType) GetKey(channel string) (newKey string, err error) {
 		return key.(string), nil
 	}
 	newKey, err = r.SetKey(channel)
-	log.Printf("[KEY] new channel [%s]: %s", channel, newKey)
+	log.Debugf("[KEY] new channel [%s]: %s", channel, newKey)
 	return
 }
 

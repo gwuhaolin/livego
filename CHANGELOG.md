@@ -13,13 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     {
         "jwt": {
             "secret": "testing",
-            "algorithm": "HS256s"
+            "algorithm": "HS256"
         },
         "server": [
             {
                 "appname": "live",
-                "liveon": "on",
-                "hlson": "on"
+                "live": true,
+                "hls": true
             }
         ]
     }
@@ -32,14 +32,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         "server": [
             {
                 "appname": "live",
-                "liveon": "on",
-                "hlson": "on"
+                "live": true,
+                "hls": true
             }
         ]
     }
 ```
+- Makefile
 
 ### Changed
 - Show `players`.
 - Show `stream_id`.
 - Deleted keys saved in physical file, now the keys are in cached using `go-cache` by default.
+- Using `logrus` like log system.
+- Using method `.Get(queryParamName)` to get an url query param.
+- Replaced `errors.New(...)` to `fmt.Errorf(...)`.
+- Replaced types string on config params `liveon` and `hlson` to booleans `live: true/false` and `hls: true/false`

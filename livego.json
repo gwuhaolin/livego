@@ -1,9 +1,9 @@
 {
-  "server": [
-    {
-      "appname": "livego",
-      "liveon": "on",
-      "hlson": "on"
-    }
-  ]
+    "server": [
+        {
+            "appname": "livego",
+            "live": true,
+            "hls": true
+        }
+    ]
 }
