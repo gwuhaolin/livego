@@ -42,3 +42,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Show `players`.
 - Show `stream_id`.
+- Deleted keys saved in physical file, now the keys are in cached using `go-cache`
