@@ -1,3 +1,5 @@
+![Test](https://github.com/gwuhaolin/livego/workflows/Test/badge.svg)
+
 # livego
 Simple and efficient live broadcast server:
 - Very simple to install and use;
