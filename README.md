@@ -1,5 +1,7 @@
 ![Test](https://github.com/gwuhaolin/livego/workflows/Test/badge.svg)
 
+<img src='./logo.png' width='130px' height='50px'/>
+
 # livego
 Simple and efficient live broadcast server:
 - Very simple to install and use;
@@ -25,7 +27,7 @@ Simple and efficient live broadcast server:
 After directly downloading the compiled [binary file](https://github.com/gwuhaolin/livego/releases), execute it on the command line.
 
 #### Boot from Docker
-Run `docker run -p 1935:1935 -p 7001:7001 -p 7002:7002 -d --name livego gnurub/livego` to start
+Run `docker run -p 1935:1935 -p 7001:7001 -p 7002:7002 -d --name livego docker.pkg.github.com/gwuhaolin/livego:latest` to start
 
 #### Compile from source
 1. Download the source code `git clone https://github.com/gwuhaolin/livego.git`
