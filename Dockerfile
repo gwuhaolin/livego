@@ -35,7 +35,6 @@ RUN make build
 ## IMAGE
 FROM alpine:3.10
 
-COPY --from=gobuild /go/src/github.com/gwuhaolin/livego/config /
 COPY --from=gobuild /go/src/github.com/gwuhaolin/livego/livego /
 
 VOLUME ["/tmp"]

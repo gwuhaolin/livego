@@ -1,9 +1,7 @@
 package hls
 
 import (
-	"errors"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"path"
@@ -14,6 +12,7 @@ import (
 	"livego/av"
 
 	cmap "github.com/orcaman/concurrent-map"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -21,10 +20,10 @@ const (
 )
 
 var (
-	ErrNoPublisher         = errors.New("No publisher")
-	ErrInvalidReq          = errors.New("invalid req url path")
-	ErrNoSupportVideoCodec = errors.New("no support video codec")
-	ErrNoSupportAudioCodec = errors.New("no support audio codec")
+	ErrNoPublisher         = fmt.Errorf("no publisher")
+	ErrInvalidReq          = fmt.Errorf("invalid req url path")
+	ErrNoSupportVideoCodec = fmt.Errorf("no support video codec")
+	ErrNoSupportAudioCodec = fmt.Errorf("no support audio codec")
 )
 
 var crossdomainxml = []byte(`<?xml version="1.0" ?>
@@ -60,7 +59,7 @@ func (server *Server) GetWriter(info av.Info) av.WriteCloser {
 	var s *Source
 	ok := server.conns.Has(info.Key)
 	if !ok {
-		log.Println("new hls source")
+		log.Debug("new hls source")
 		s = NewSource(info)
 		server.conns.Set(info.Key, s)
 	} else {
@@ -84,7 +83,7 @@ func (server *Server) checkStop() {
 		for item := range server.conns.IterBuffered() {
 			v := item.Val.(*Source)
 			if !v.Alive() {
-				log.Println("check stop and remove: ", v.Info())
+				log.Debug("check stop and remove: ", v.Info())
 				server.conns.Remove(item.Key)
 			}
 		}
@@ -112,7 +111,7 @@ func (server *Server) handle(w http.ResponseWriter, r *http.Request) {
 		}
 		body, err := tsCache.GenM3U8PlayList()
 		if err != nil {
-			log.Println("GenM3U8PlayList error: ", err)
+			log.Debug("GenM3U8PlayList error: ", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -132,7 +131,7 @@ func (server *Server) handle(w http.ResponseWriter, r *http.Request) {
 		tsCache := conn.GetCacheInc()
 		item, err := tsCache.GetItem(r.URL.Path)
 		if err != nil {
-			log.Println("GetItem error: ", err)
+			log.Debug("GetItem error: ", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}

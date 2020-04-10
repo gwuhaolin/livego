@@ -1,4 +1,7 @@
-# livego
+![Test](https://github.com/gwuhaolin/livego/workflows/Test/badge.svg)
+
+<img src='./logo.png' width='130px' height='50px'/>
+
 Simple and efficient live broadcast server:
 - Very simple to install and use;
 - Pure Golang, high performance, cross-platform;
@@ -23,11 +26,11 @@ Simple and efficient live broadcast server:
 After directly downloading the compiled [binary file](https://github.com/gwuhaolin/livego/releases), execute it on the command line.
 
 #### Boot from Docker
-Run `docker run -p 1935:1935 -p 7001:7001 -p 7002:7002 -d --name livego gnurub/livego` to start
+Run `docker run -p 1935:1935 -p 7001:7001 -p 7002:7002 -d --name livego gwuhaolin/livego` to start
 
 #### Compile from source
 1. Download the source code `git clone https://github.com/gwuhaolin/livego.git`
-2. Go to the livego directory and execute `go build`
+2. Go to the livego directory and execute `go build` or `make run`
 
 ## Use
 2. Start the service: execute the livego binary file to start the livego service;

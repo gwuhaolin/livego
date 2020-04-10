@@ -2,7 +2,6 @@ package amf
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 )
@@ -18,15 +17,11 @@ func DumpBytes(label string, buf []byte, size int) {
 func Dump(label string, val interface{}) error {
 	json, err := json.MarshalIndent(val, "", "  ")
 	if err != nil {
-		return Error("Error dumping %s: %s", label, err)
+		return fmt.Errorf("Error dumping %s: %s", label, err)
 	}
 
 	fmt.Printf("Dumping %s:\n%s\n", label, json)
 	return nil
-}
-
-func Error(f string, v ...interface{}) error {
-	return errors.New(fmt.Sprintf(f, v...))
 }
 
 func WriteByte(w io.Writer, b byte) (err error) {
@@ -85,7 +80,7 @@ func AssertMarker(r io.Reader, checkMarker bool, m byte) error {
 	}
 
 	if marker != m {
-		return Error("decode assert marker failed: expected %v got %v", m, marker)
+		return fmt.Errorf("decode assert marker failed: expected %v got %v", m, marker)
 	}
 
 	return nil

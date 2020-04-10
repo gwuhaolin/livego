@@ -2,31 +2,27 @@ package configure
 
 import (
 	"fmt"
-	"log"
-	"math/rand"
+
+	"livego/utils/uid"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/patrickmn/go-cache"
+	log "github.com/sirupsen/logrus"
 )
-
-var RoomKeys *RoomKeysType
-
-var roomUpdated = false
-
-var saveInLocal = true
 
 type RoomKeysType struct {
 	redisCli   *redis.Client
 	localCache *cache.Cache
 }
 
+var RoomKeys = &RoomKeysType{
+	localCache: cache.New(cache.NoExpiration, 0),
+}
+
+var saveInLocal = true
+
 func Init() {
 	saveInLocal = GetRedisAddr() == nil
-
-	RoomKeys = &RoomKeysType{
-		localCache: cache.New(cache.NoExpiration, 0),
-	}
-
 	if saveInLocal {
 		return
 	}
@@ -39,17 +35,17 @@ func Init() {
 
 	_, err := RoomKeys.redisCli.Ping().Result()
 	if err != nil {
-		panic(err)
+		log.Panic("Redis: ", err)
 	}
 
-	log.Printf("Redis connected")
+	log.Debug("Redis connected")
 }
 
 // set/reset a random key for channel
 func (r *RoomKeysType) SetKey(channel string) (key string, err error) {
 	if !saveInLocal {
 		for {
-			key = randStringRunes(48)
+			key = uid.RandStringRunes(48)
 			if _, err = r.redisCli.Get(key).Result(); err == redis.Nil {
 				err = r.redisCli.Set(channel, key, 0).Err()
 				if err != nil {
@@ -65,14 +61,13 @@ func (r *RoomKeysType) SetKey(channel string) (key string, err error) {
 	}
 
 	for {
-		key = randStringRunes(48)
+		key = uid.RandStringRunes(48)
 		if _, found := r.localCache.Get(key); !found {
 			r.localCache.SetDefault(channel, key)
 			r.localCache.SetDefault(key, channel)
 			break
 		}
 	}
-	roomUpdated = true
 	return
 }
 
@@ -80,7 +75,7 @@ func (r *RoomKeysType) GetKey(channel string) (newKey string, err error) {
 	if !saveInLocal {
 		if newKey, err = r.redisCli.Get(channel).Result(); err == redis.Nil {
 			newKey, err = r.SetKey(channel)
-			log.Printf("[KEY] new channel [%s]: %s", channel, newKey)
+			log.Debugf("[KEY] new channel [%s]: %s", channel, newKey)
 			return
 		}
 
@@ -93,7 +88,7 @@ func (r *RoomKeysType) GetKey(channel string) (newKey string, err error) {
 		return key.(string), nil
 	}
 	newKey, err = r.SetKey(channel)
-	log.Printf("[KEY] new channel [%s]: %s", channel, newKey)
+	log.Debugf("[KEY] new channel [%s]: %s", channel, newKey)
 	return
 }
 
@@ -136,15 +131,4 @@ func (r *RoomKeysType) DeleteKey(key string) bool {
 		return true
 	}
 	return false
-}
-
-// helpers
-var letterRunes = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-func randStringRunes(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
 }

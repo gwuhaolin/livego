@@ -2,7 +2,6 @@ package core
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -10,10 +9,10 @@ import (
 	neturl "net/url"
 	"strings"
 
-	"log"
-
 	"livego/av"
 	"livego/protocol/amf"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -27,7 +26,7 @@ var (
 )
 
 var (
-	ErrFail = errors.New("respone err")
+	ErrFail = fmt.Errorf("respone err")
 )
 
 type ConnClient struct {
@@ -75,14 +74,14 @@ func (connClient *ConnClient) readRespMsg() error {
 			r := bytes.NewReader(rc.Data)
 			vs, _ := connClient.decoder.DecodeBatch(r, amf.AMF0)
 
-			log.Printf("readRespMsg: vs=%v", vs)
+			log.Debugf("readRespMsg: vs=%v", vs)
 			for k, v := range vs {
 				switch v.(type) {
 				case string:
 					switch connClient.curcmdName {
 					case cmdConnect, cmdCreateStream:
 						if v.(string) != respResult {
-							return errors.New(v.(string))
+							return fmt.Errorf(v.(string))
 						}
 
 					case cmdPublish:
@@ -158,7 +157,7 @@ func (connClient *ConnClient) writeConnectMsg() error {
 	event["tcUrl"] = connClient.tcurl
 	connClient.curcmdName = cmdConnect
 
-	log.Printf("writeConnectMsg: connClient.transID=%d, event=%v", connClient.transID, event)
+	log.Debugf("writeConnectMsg: connClient.transID=%d, event=%v", connClient.transID, event)
 	if err := connClient.writeMsg(cmdConnect, connClient.transID, event); err != nil {
 		return err
 	}
@@ -169,7 +168,7 @@ func (connClient *ConnClient) writeCreateStreamMsg() error {
 	connClient.transID++
 	connClient.curcmdName = cmdCreateStream
 
-	log.Printf("writeCreateStreamMsg: connClient.transID=%d", connClient.transID)
+	log.Debugf("writeCreateStreamMsg: connClient.transID=%d", connClient.transID)
 	if err := connClient.writeMsg(cmdCreateStream, connClient.transID, nil); err != nil {
 		return err
 	}
@@ -181,7 +180,7 @@ func (connClient *ConnClient) writeCreateStreamMsg() error {
 		}
 
 		if err == ErrFail {
-			log.Println("writeCreateStreamMsg readRespMsg err=%v", err)
+			log.Debugf("writeCreateStreamMsg readRespMsg err=%v", err)
 			return err
 		}
 	}
@@ -200,7 +199,7 @@ func (connClient *ConnClient) writePublishMsg() error {
 func (connClient *ConnClient) writePlayMsg() error {
 	connClient.transID++
 	connClient.curcmdName = cmdPlay
-	log.Printf("writePlayMsg: connClient.transID=%d, cmdPlay=%v, connClient.title=%v",
+	log.Debugf("writePlayMsg: connClient.transID=%d, cmdPlay=%v, connClient.title=%v",
 		connClient.transID, cmdPlay, connClient.title)
 
 	if err := connClient.writeMsg(cmdPlay, 0, nil, connClient.title); err != nil {
@@ -236,9 +235,9 @@ func (connClient *ConnClient) Start(url string, method string) error {
 		port = ":" + port
 	}
 	ips, err := net.LookupIP(host)
-	log.Printf("ips: %v, host: %v", ips, host)
+	log.Debugf("ips: %v, host: %v", ips, host)
 	if err != nil {
-		log.Println(err)
+		log.Warning(err)
 		return err
 	}
 	remoteIP = ips[rand.Intn(len(ips))].String()
@@ -248,41 +247,41 @@ func (connClient *ConnClient) Start(url string, method string) error {
 
 	local, err := net.ResolveTCPAddr("tcp", localIP)
 	if err != nil {
-		log.Println(err)
+		log.Warning(err)
 		return err
 	}
-	log.Println("remoteIP: ", remoteIP)
+	log.Debug("remoteIP: ", remoteIP)
 	remote, err := net.ResolveTCPAddr("tcp", remoteIP)
 	if err != nil {
-		log.Println(err)
+		log.Warning(err)
 		return err
 	}
 	conn, err := net.DialTCP("tcp", local, remote)
 	if err != nil {
-		log.Println(err)
+		log.Warning(err)
 		return err
 	}
 
-	log.Println("connection:", "local:", conn.LocalAddr(), "remote:", conn.RemoteAddr())
+	log.Debug("connection:", "local:", conn.LocalAddr(), "remote:", conn.RemoteAddr())
 
 	connClient.conn = NewConn(conn, 4*1024)
 
-	log.Println("HandshakeClient....")
+	log.Debug("HandshakeClient....")
 	if err := connClient.conn.HandshakeClient(); err != nil {
 		return err
 	}
 
-	log.Println("writeConnectMsg....")
+	log.Debug("writeConnectMsg....")
 	if err := connClient.writeConnectMsg(); err != nil {
 		return err
 	}
-	log.Println("writeCreateStreamMsg....")
+	log.Debug("writeCreateStreamMsg....")
 	if err := connClient.writeCreateStreamMsg(); err != nil {
-		log.Println("writeCreateStreamMsg error", err)
+		log.Debug("writeCreateStreamMsg error", err)
 		return err
 	}
 
-	log.Println("method control:", method, av.PUBLISH, av.PLAY)
+	log.Debug("method control:", method, av.PUBLISH, av.PLAY)
 	if method == av.PUBLISH {
 		if err := connClient.writePublishMsg(); err != nil {
 			return err

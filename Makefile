@@ -1,4 +1,15 @@
 GO_BIN ?= go
+GO_BUILD = $(GO_BIN) build
+GO_CLEAN = $(GO_BIN) clean
+GO_TEST = $(GO_BIN) test
+GO_GET = $(GO_BIN) get
+BINARY_NAME = livego
+BINARY_UNIX = $(BINARY_NAME)_unix
+
+DOCKER_ACC ?= gwuhaolin
+DOCKER_REPO ?= livego
+
+TAG := $(shell git describe --tags --abbrev=0 2>/dev/null)
 
 tidy:
 ifeq ($(GO111MODULE),on)
@@ -9,12 +20,12 @@ endif
 
 build:
 	pkger
-	$(GO_BIN) build -v .
+	$(GO_BUILD) -o $(BINARY_NAME) -v -ldflags="-X main.VERSION=$(TAG)"
 	make tidy
 
 test:
 	pkger
-	$(GO_BIN) test -tags ${TAGS} -cover ./...
+	$(GO_TEST) -tags ${TAGS} -cover ./...
 	pkger
 	make tidy
 

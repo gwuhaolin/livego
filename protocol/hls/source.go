@@ -2,15 +2,15 @@ package hls
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"livego/av"
 	"livego/container/flv"
 	"livego/container/ts"
 	"livego/parser"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -57,7 +57,7 @@ func NewSource(info av.Info) *Source {
 	go func() {
 		err := s.SendPacket()
 		if err != nil {
-			log.Println("send packet error: ", err)
+			log.Warning("send packet error: ", err)
 			s.closed = true
 		}
 	}()
@@ -69,7 +69,7 @@ func (source *Source) GetCacheInc() *TSCacheItem {
 }
 
 func (source *Source) DropPacket(pktQue chan *av.Packet, info av.Info) {
-	log.Printf("[%v] packet queue max!!!", info)
+	log.Warningf("[%v] packet queue max!!!", info)
 	for i := 0; i < maxQueueNum-84; i++ {
 		tmpPkt, ok := <-pktQue
 		// try to don't drop audio
@@ -93,20 +93,19 @@ func (source *Source) DropPacket(pktQue chan *av.Packet, info av.Info) {
 		}
 
 	}
-	log.Println("packet queue len: ", len(pktQue))
+	log.Debug("packet queue len: ", len(pktQue))
 }
 
 func (source *Source) Write(p *av.Packet) (err error) {
 	err = nil
 	if source.closed {
-		err = errors.New("hls source closed")
+		err = fmt.Errorf("hls source closed")
 		return
 	}
 	source.SetPreTime()
 	defer func() {
 		if e := recover(); e != nil {
-			errString := fmt.Sprintf("hls source has already been closed:%v", e)
-			err = errors.New(errString)
+			err = fmt.Errorf("hls source has already been closed:%v", e)
 		}
 	}()
 	if len(source.packetQueue) >= maxQueueNum-24 {
@@ -121,16 +120,16 @@ func (source *Source) Write(p *av.Packet) (err error) {
 
 func (source *Source) SendPacket() error {
 	defer func() {
-		log.Printf("[%v] hls sender stop", source.info)
+		log.Debugf("[%v] hls sender stop", source.info)
 		if r := recover(); r != nil {
-			log.Println("hls SendPacket panic: ", r)
+			log.Warning("hls SendPacket panic: ", r)
 		}
 	}()
 
-	log.Printf("[%v] hls sender start", source.info)
+	log.Debugf("[%v] hls sender start", source.info)
 	for {
 		if source.closed {
-			return errors.New("closed")
+			return fmt.Errorf("closed")
 		}
 
 		p, ok := <-source.packetQueue
@@ -141,17 +140,17 @@ func (source *Source) SendPacket() error {
 
 			err := source.demuxer.Demux(p)
 			if err == flv.ErrAvcEndSEQ {
-				log.Println(err)
+				log.Warning(err)
 				continue
 			} else {
 				if err != nil {
-					log.Println(err)
+					log.Warning(err)
 					return err
 				}
 			}
 			compositionTime, isSeq, err := source.parse(p)
 			if err != nil {
-				log.Println(err)
+				log.Warning(err)
 			}
 			if err != nil || isSeq {
 				continue
@@ -162,7 +161,7 @@ func (source *Source) SendPacket() error {
 				source.tsMux(p)
 			}
 		} else {
-			return errors.New("closed")
+			return fmt.Errorf("closed")
 		}
 	}
 }
@@ -180,7 +179,7 @@ func (source *Source) cleanup() {
 }
 
 func (source *Source) Close(err error) {
-	log.Println("hls source closed: ", source.info)
+	log.Debug("hls source closed: ", source.info)
 	if !source.closed {
 		source.cleanup()
 	}

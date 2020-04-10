@@ -2,6 +2,7 @@ package amf
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 	"reflect"
 )
@@ -43,16 +44,16 @@ func (e *Encoder) EncodeAmf0(w io.Writer, val interface{}) (int, error) {
 	case reflect.Map:
 		obj, ok := val.(Object)
 		if ok != true {
-			return 0, Error("encode amf0: unable to create object from map")
+			return 0, fmt.Errorf("encode amf0: unable to create object from map")
 		}
 		return e.EncodeAmf0Object(w, obj, true)
 	}
 
 	if _, ok := val.(TypedObject); ok {
-		return 0, Error("encode amf0: unsupported type typed object")
+		return 0, fmt.Errorf("encode amf0: unsupported type typed object")
 	}
 
-	return 0, Error("encode amf0: unsupported type %s", v.Type())
+	return 0, fmt.Errorf("encode amf0: unsupported type %s", v.Type())
 }
 
 // marker: 1 byte 0x00
@@ -117,13 +118,13 @@ func (e *Encoder) EncodeAmf0String(w io.Writer, val string, encodeMarker bool) (
 	length := uint16(len(val))
 	err = binary.Write(w, binary.BigEndian, length)
 	if err != nil {
-		return n, Error("encode amf0: unable to encode string length: %s", err)
+		return n, fmt.Errorf("encode amf0: unable to encode string length: %s", err)
 	}
 	n += 2
 
 	m, err = w.Write([]byte(val))
 	if err != nil {
-		return n, Error("encode amf0: unable to encode string value: %s", err)
+		return n, fmt.Errorf("encode amf0: unable to encode string value: %s", err)
 	}
 	n += m
 
@@ -146,26 +147,26 @@ func (e *Encoder) EncodeAmf0Object(w io.Writer, val Object, encodeMarker bool) (
 	for k, v := range val {
 		m, err = e.EncodeAmf0String(w, k, false)
 		if err != nil {
-			return n, Error("encode amf0: unable to encode object key: %s", err)
+			return n, fmt.Errorf("encode amf0: unable to encode object key: %s", err)
 		}
 		n += m
 
 		m, err = e.EncodeAmf0(w, v)
 		if err != nil {
-			return n, Error("encode amf0: unable to encode object value: %s", err)
+			return n, fmt.Errorf("encode amf0: unable to encode object value: %s", err)
 		}
 		n += m
 	}
 
 	m, err = e.EncodeAmf0String(w, "", false)
 	if err != nil {
-		return n, Error("encode amf0: unable to encode object empty string: %s", err)
+		return n, fmt.Errorf("encode amf0: unable to encode object empty string: %s", err)
 	}
 	n += m
 
 	err = WriteMarker(w, AMF0_OBJECT_END_MARKER)
 	if err != nil {
-		return n, Error("encode amf0: unable to object end marker: %s", err)
+		return n, fmt.Errorf("encode amf0: unable to object end marker: %s", err)
 	}
 	n += 1
 
@@ -216,13 +217,13 @@ func (e *Encoder) EncodeAmf0EcmaArray(w io.Writer, val Object, encodeMarker bool
 	length := uint32(len(val))
 	err = binary.Write(w, binary.BigEndian, length)
 	if err != nil {
-		return n, Error("encode amf0: unable to encode ecma array length: %s", err)
+		return n, fmt.Errorf("encode amf0: unable to encode ecma array length: %s", err)
 	}
 	n += 4
 
 	m, err = e.EncodeAmf0Object(w, val, false)
 	if err != nil {
-		return n, Error("encode amf0: unable to encode ecma array object: %s", err)
+		return n, fmt.Errorf("encode amf0: unable to encode ecma array object: %s", err)
 	}
 	n += m
 
@@ -245,14 +246,14 @@ func (e *Encoder) EncodeAmf0StrictArray(w io.Writer, val Array, encodeMarker boo
 	length := uint32(len(val))
 	err = binary.Write(w, binary.BigEndian, length)
 	if err != nil {
-		return n, Error("encode amf0: unable to encode strict array length: %s", err)
+		return n, fmt.Errorf("encode amf0: unable to encode strict array length: %s", err)
 	}
 	n += 4
 
 	for _, v := range val {
 		m, err = e.EncodeAmf0(w, v)
 		if err != nil {
-			return n, Error("encode amf0: unable to encode strict array element: %s", err)
+			return n, fmt.Errorf("encode amf0: unable to encode strict array element: %s", err)
 		}
 		n += m
 	}
@@ -276,13 +277,13 @@ func (e *Encoder) EncodeAmf0LongString(w io.Writer, val string, encodeMarker boo
 	length := uint32(len(val))
 	err = binary.Write(w, binary.BigEndian, length)
 	if err != nil {
-		return n, Error("encode amf0: unable to encode long string length: %s", err)
+		return n, fmt.Errorf("encode amf0: unable to encode long string length: %s", err)
 	}
 	n += 4
 
 	m, err = w.Write([]byte(val))
 	if err != nil {
-		return n, Error("encode amf0: unable to encode long string value: %s", err)
+		return n, fmt.Errorf("encode amf0: unable to encode long string value: %s", err)
 	}
 	n += m
 

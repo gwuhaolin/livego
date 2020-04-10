@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"flag"
 	"io/ioutil"
-	"log"
+
+	log "github.com/sirupsen/logrus"
 )
 
 /*
@@ -12,8 +13,8 @@ import (
   "server": [
     {
       "appname": "live",
-      "liveon": "on",
-	  "hlson": "on",
+      "live": true,
+	  "hls": true,
 	  "static_push": []
     }
   ]
@@ -27,8 +28,8 @@ var (
 
 type Application struct {
 	Appname    string   `json:"appname"`
-	Liveon     string   `json:"liveon"`
-	Hlson      string   `json:"hlson"`
+	Live       bool     `json:"liveon"`
+	Hls        bool     `json:"hls"`
 	StaticPush []string `json:"static_push"`
 }
 type JWTCfg struct {
@@ -43,28 +44,33 @@ type ServerCfg struct {
 	Server    []Application `json:"server"`
 }
 
-var RtmpServercfg ServerCfg
+// default config
+var RtmpServercfg = ServerCfg{
+	Server: []Application{{
+		Appname:    "livego",
+		Live:       true,
+		Hls:        true,
+		StaticPush: nil,
+	}},
+}
 
-func LoadConfig(configfilename string) error {
-	log.Printf("starting load configure file %s", configfilename)
+func LoadConfig(configfilename string) {
+	defer Init()
+
+	log.Infof("starting load configure file %s", configfilename)
 	data, err := ioutil.ReadFile(configfilename)
 	if err != nil {
-		log.Printf("ReadFile %s error:%v", configfilename, err)
-		return err
+		log.Warningf("ReadFile %s error:%v", configfilename, err)
+		log.Info("Using default config")
+		return
 	}
-
-	// log.Printf("loadconfig: \r\n%s", string(data))
 
 	err = json.Unmarshal(data, &RtmpServercfg)
 	if err != nil {
-		log.Printf("json.Unmarshal error:%v", err)
-		return err
+		log.Errorf("json.Unmarshal error:%v", err)
+		log.Info("Using default config")
 	}
-	log.Printf("get config json data:%v", RtmpServercfg)
-
-	Init()
-
-	return nil
+	log.Debugf("get config json data:%v", RtmpServercfg)
 }
 
 func GetRedisAddr() *string {
@@ -96,8 +102,8 @@ func GetRedisPwd() *string {
 
 func CheckAppName(appname string) bool {
 	for _, app := range RtmpServercfg.Server {
-		if (app.Appname == appname) && (app.Liveon == "on") {
-			return true
+		if app.Appname == appname {
+			return app.Live
 		}
 	}
 	return false
@@ -105,7 +111,7 @@ func CheckAppName(appname string) bool {
 
 func GetStaticPushUrlList(appname string) ([]string, bool) {
 	for _, app := range RtmpServercfg.Server {
-		if (app.Appname == appname) && (app.Liveon == "on") {
+		if (app.Appname == appname) && app.Live {
 			if len(app.StaticPush) > 0 {
 				return app.StaticPush, true
 			} else {
