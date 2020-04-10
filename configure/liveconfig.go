@@ -45,28 +45,30 @@ type ServerCfg struct {
 	Server    []Application `json:"server"`
 }
 
-var RtmpServercfg ServerCfg
+// default config
+var RtmpServercfg = ServerCfg{
+	Server: []Application{{
+		Appname:    "livego",
+		Liveon:     "on",
+		Hlson:      "on",
+		StaticPush: nil,
+	}},
+}
 
-func LoadConfig(configfilename string) error {
+func LoadConfig(configfilename string) {
 	log.Printf("starting load configure file %s", configfilename)
 	data, err := ioutil.ReadFile(configfilename)
 	if err != nil {
 		log.Printf("ReadFile %s error:%v", configfilename, err)
-		return err
 	}
-
-	// log.Printf("loadconfig: \r\n%s", string(data))
 
 	err = json.Unmarshal(data, &RtmpServercfg)
 	if err != nil {
 		log.Printf("json.Unmarshal error:%v", err)
-		return err
 	}
 	log.Printf("get config json data:%v", RtmpServercfg)
 
 	Init()
-
-	return nil
 }
 
 func GetKeyFile() *string {

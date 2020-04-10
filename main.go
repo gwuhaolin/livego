@@ -19,7 +19,7 @@ var (
 	httpFlvAddr    = flag.String("httpflv-addr", ":7001", "HTTP-FLV server listen address")
 	hlsAddr        = flag.String("hls-addr", ":7002", "HLS server listen address")
 	operaAddr      = flag.String("manage-addr", ":8090", "HTTP manage interface server listen address")
-	configfilename = flag.String("config-file", "config/livego.json", "configure filename")
+	configfilename = flag.String("config-file", "livego.json", "configure filename")
 )
 
 func init() {
@@ -116,10 +116,7 @@ func main() {
 		}
 	}()
 	log.Println("start livego, version", version)
-	err := configure.LoadConfig(*configfilename)
-	if err != nil {
-		return
-	}
+	configure.LoadConfig(*configfilename)
 
 	stream := rtmp.NewRtmpStream()
 	hlsServer := startHls()
