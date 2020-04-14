@@ -48,3 +48,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Using method `.Get(queryParamName)` to get an url query param.
 - Replaced `errors.New(...)` to `fmt.Errorf(...)`.
 - Replaced types string on config params `liveon` and `hlson` to booleans `live: true/false` and `hls: true/false`
+- Using viper for config, allow use file, cloud providers, environment vars or flags.
+- Using yaml config by default.
