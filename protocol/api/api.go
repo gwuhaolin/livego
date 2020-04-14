@@ -63,30 +63,32 @@ func NewServer(h av.Handler, rtmpAddr string) *Server {
 }
 
 func JWTMiddleware(next http.Handler) http.Handler {
+	isJWT := len(configure.Config.GetString("jwt.secret")) > 0
+	if !isJWT {
+		return next
+	}
+
+	log.Info("Using JWT middleware")
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if len(configure.RtmpServercfg.JWTCfg.Secret) > 0 {
-			var algorithm jwt.SigningMethod
-			if len(configure.RtmpServercfg.JWTCfg.Algorithm) > 0 {
-				algorithm = jwt.GetSigningMethod(configure.RtmpServercfg.JWTCfg.Algorithm)
-			}
-
-			if algorithm == nil {
-				algorithm = jwt.SigningMethodHS256
-			}
-
-			jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
-				Extractor: jwtmiddleware.FromFirst(jwtmiddleware.FromAuthHeader, jwtmiddleware.FromParameter("jwt")),
-				ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
-					return []byte(configure.RtmpServercfg.Secret), nil
-				},
-				SigningMethod: algorithm,
-			})
-
-			jwtMiddleware.HandlerWithNext(w, r, next.ServeHTTP)
-			return
+		var algorithm jwt.SigningMethod
+		if len(configure.Config.GetString("jwt.algorithm")) > 0 {
+			algorithm = jwt.GetSigningMethod(configure.Config.GetString("jwt.algorithm"))
 		}
-		next.ServeHTTP(w, r)
 
+		if algorithm == nil {
+			algorithm = jwt.SigningMethodHS256
+		}
+
+		jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
+			Extractor: jwtmiddleware.FromFirst(jwtmiddleware.FromAuthHeader, jwtmiddleware.FromParameter("jwt")),
+			ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+				return []byte(configure.Config.GetString("jwt.secret")), nil
+			},
+			SigningMethod: algorithm,
+		})
+
+		jwtMiddleware.HandlerWithNext(w, r, next.ServeHTTP)
 	})
 }
 

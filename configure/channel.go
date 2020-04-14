@@ -22,14 +22,14 @@ var RoomKeys = &RoomKeysType{
 var saveInLocal = true
 
 func Init() {
-	saveInLocal = GetRedisAddr() == nil
+	saveInLocal = len(Config.GetString("redis_addr")) == 0
 	if saveInLocal {
 		return
 	}
 
 	RoomKeys.redisCli = redis.NewClient(&redis.Options{
-		Addr:     *GetRedisAddr(),
-		Password: *GetRedisPwd(),
+		Addr:     Config.GetString("redis_addr"),
+		Password: Config.GetString("redis_pwd"),
 		DB:       0,
 	})
 

@@ -1,7 +1,6 @@
 package rtmp
 
 import (
-	"flag"
 	"fmt"
 	"net"
 	"net/url"
@@ -25,8 +24,8 @@ const (
 )
 
 var (
-	readTimeout  = flag.Int("readTimeout", 10, "read time out")
-	writeTimeout = flag.Int("writeTimeout", 10, "write time out")
+	readTimeout  = configure.Config.GetInt("read_timeout")
+	writeTimeout = configure.Config.GetInt("write_timeout")
 )
 
 type Client struct {
@@ -192,7 +191,7 @@ func NewVirWriter(conn StreamReadWriteCloser) *VirWriter {
 	ret := &VirWriter{
 		Uid:         uid.NewId(),
 		conn:        conn,
-		RWBaser:     av.NewRWBaser(time.Second * time.Duration(*writeTimeout)),
+		RWBaser:     av.NewRWBaser(time.Second * time.Duration(writeTimeout)),
 		packetQueue: make(chan *av.Packet, maxQueueNum),
 		WriteBWInfo: StaticsBW{0, 0, 0, 0, 0, 0, 0, 0},
 	}
@@ -367,7 +366,7 @@ func NewVirReader(conn StreamReadWriteCloser) *VirReader {
 	return &VirReader{
 		Uid:        uid.NewId(),
 		conn:       conn,
-		RWBaser:    av.NewRWBaser(time.Second * time.Duration(*writeTimeout)),
+		RWBaser:    av.NewRWBaser(time.Second * time.Duration(writeTimeout)),
 		demuxer:    flv.NewDemuxer(),
 		ReadBWInfo: StaticsBW{0, 0, 0, 0, 0, 0, 0, 0},
 	}
