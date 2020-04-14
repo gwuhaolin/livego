@@ -38,7 +38,7 @@ func Init() {
 		log.Panic("Redis: ", err)
 	}
 
-	log.Debug("Redis connected")
+	log.Info("Redis connected")
 }
 
 // set/reset a random key for channel
