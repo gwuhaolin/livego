@@ -9,7 +9,7 @@ BINARY_UNIX = $(BINARY_NAME)_unix
 DOCKER_ACC ?= gwuhaolin
 DOCKER_REPO ?= livego
 
-TAG := $(shell git describe --tags --abbrev=0 2>/dev/null)
+TAG ?= $(shell git describe --tags --abbrev=0 2>/dev/null)
 
 default: all
 
