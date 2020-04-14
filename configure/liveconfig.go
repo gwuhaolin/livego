@@ -3,7 +3,6 @@ package configure
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/kr/pretty"
@@ -130,7 +129,6 @@ func LoadConfig() {
 func CheckAppName(appname string) bool {
 	apps := Applications{}
 	Config.UnmarshalKey("server", &apps)
-	fmt.Println(apps)
 	for _, app := range apps {
 		if app.Appname == appname {
 			return app.Live
