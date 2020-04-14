@@ -9,7 +9,7 @@ BINARY_UNIX = $(BINARY_NAME)_unix
 DOCKER_ACC ?= gwuhaolin
 DOCKER_REPO ?= livego
 
-TAG := $(shell git describe --tags --abbrev=0 2>/dev/null)
+TAG ?= $(shell git describe --tags --abbrev=0 2>/dev/null)
 
 tidy:
 ifeq ($(GO111MODULE),on)
@@ -17,6 +17,9 @@ ifeq ($(GO111MODULE),on)
 else
 	echo skipping go mod tidy
 endif
+
+run: binary
+	./$(BINARY_NAME)
 
 build:
 	pkger
@@ -45,7 +48,8 @@ generate-webui: build-webui-image
 	fi
 
 dockerize:
-	docker build -t gwuhaolin:livego .
+	docker build -t $(DOCKER_ACC)/$(DOCKER_REPO):$(TAG) .
+	docker push $(DOCKER_ACC)/$(DOCKER_REPO):$(TAG)
 
 binary: generate-webui
 	make build

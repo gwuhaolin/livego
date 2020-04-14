@@ -67,57 +67,56 @@ func NewServer(h av.Handler, rtmpAddr string) *Server {
 }
 
 func JWTMiddleware(next http.Handler) http.Handler {
-	var algorithm jwt.SigningMethod
-	var secret []byte
-	if len(configure.RtmpServercfg.JWTCfg.Secret) > 0 {
-		secret = []byte(configure.RtmpServercfg.JWTCfg.Secret)
-
-		if len(configure.RtmpServercfg.JWTCfg.Algorithm) > 0 {
-			algorithm = jwt.GetSigningMethod(configure.RtmpServercfg.JWTCfg.Algorithm)
-		}
-
-		if algorithm == nil {
-			algorithm = jwt.SigningMethodHS256
-		}
-
-		// Create the Claims
-		token := jwt.NewWithClaims(algorithm, &jwt.StandardClaims{})
-		ss, _ := token.SignedString(secret)
-
-		// Token to enter to dashboard
-		log.Infof("valid token: %v", ss)
+	isJWT := len(configure.Config.GetString("jwt.secret")) > 0
+	if !isJWT {
+		return next
 	}
 
+	log.Info("Using JWT middleware")
+
+	secret := []byte(configure.Config.GetString("jwt.secret"))
+	var algorithm jwt.SigningMethod
+
+	if len(configure.Config.GetString("jwt.algorithm")) > 0 {
+		algorithm = jwt.GetSigningMethod(configure.Config.GetString("jwt.algorithm"))
+	}
+
+	if algorithm == nil {
+		algorithm = jwt.SigningMethodHS256
+	}
+
+	// Create the Claims
+	token := jwt.NewWithClaims(algorithm, &jwt.StandardClaims{})
+	ss, _ := token.SignedString(secret)
+
+	// Token to enter to dashboard
+	log.Infof("valid token: %v", ss)
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if len(secret) > 0 {
+		jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
+			Extractor: jwtmiddleware.FromFirst(jwtmiddleware.FromAuthHeader, jwtmiddleware.FromParameter("jwt")),
+			ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+				return secret, nil
+			},
+			SigningMethod: algorithm,
+			ErrorHandler: func(w http.ResponseWriter, r *http.Request, err string) {
+				res := &Response{
+					w:      w,
+					Status: 403,
+					Data:   err,
+				}
+				res.SendJson()
+			},
+		})
 
-			jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
-				Extractor: jwtmiddleware.FromFirst(jwtmiddleware.FromAuthHeader, jwtmiddleware.FromParameter("jwt")),
-				ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
-					return secret, nil
-				},
-				SigningMethod: algorithm,
-				ErrorHandler: func(w http.ResponseWriter, r *http.Request, err string) {
-					res := &Response{
-						w:      w,
-						Data:   "Invalid token",
-						Status: 403,
-					}
-					defer res.SendJson()
-				},
-			})
-
-			jwtMiddleware.HandlerWithNext(w, r, next.ServeHTTP)
-			return
-		}
-		next.ServeHTTP(w, r)
+		jwtMiddleware.HandlerWithNext(w, r, next.ServeHTTP)
 	})
 }
 
 func (s *Server) Serve(l net.Listener) error {
 	router := mux.NewRouter()
 
-	if configure.ShowDashboard() {
+	if configure.Config.GetBool("dashboard") {
 		log.Printf("DASHBOARD On /dashboard")
 
 		dir := pkger.Dir("/static")

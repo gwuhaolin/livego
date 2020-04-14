@@ -1,7 +1,6 @@
 package flv
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path"
@@ -9,6 +8,7 @@ import (
 	"time"
 
 	"livego/av"
+	"livego/configure"
 	"livego/protocol/amf"
 	"livego/utils/pio"
 	"livego/utils/uid"
@@ -18,7 +18,6 @@ import (
 
 var (
 	flvHeader = []byte{0x46, 0x4c, 0x56, 0x01, 0x05, 0x00, 0x00, 0x00, 0x09}
-	flvDir    = flag.String("flvDir", "tmp", "output flv file at flvDir/APP/KEY_TIME.flv")
 )
 
 /*
@@ -152,13 +151,15 @@ func (f *FlvDvr) GetWriter(info av.Info) av.WriteCloser {
 		return nil
 	}
 
-	err := os.MkdirAll(path.Join(*flvDir, paths[0]), 0755)
+	flvDir := configure.Config.GetString("flv_dir")
+
+	err := os.MkdirAll(path.Join(flvDir, paths[0]), 0755)
 	if err != nil {
 		log.Error("mkdir error: ", err)
 		return nil
 	}
 
-	fileName := fmt.Sprintf("%s_%d.%s", path.Join(*flvDir, info.Key), time.Now().Unix(), "flv")
+	fileName := fmt.Sprintf("%s_%d.%s", path.Join(flvDir, info.Key), time.Now().Unix(), "flv")
 	log.Debug("flv dvr save stream to: ", fileName)
 	w, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0755)
 	if err != nil {
