@@ -86,6 +86,14 @@ func JWTMiddleware(next http.Handler) http.Handler {
 				return []byte(configure.Config.GetString("jwt.secret")), nil
 			},
 			SigningMethod: algorithm,
+			ErrorHandler: func(w http.ResponseWriter, r *http.Request, err string) {
+				res := &Response{
+					w:      w,
+					Status: 403,
+					Data:   err,
+				}
+				res.SendJson()
+			},
 		})
 
 		jwtMiddleware.HandlerWithNext(w, r, next.ServeHTTP)
