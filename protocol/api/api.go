@@ -28,6 +28,7 @@ type Response struct {
 func (r *Response) SendJson() (int, error) {
 	resp, _ := json.Marshal(r)
 	r.w.Header().Set("Content-Type", "application/json")
+	r.w.Header().Set("Access-Control-Allow-Origin", "*")
 	r.w.WriteHeader(r.Status)
 	return r.w.Write(resp)
 }
@@ -66,23 +67,44 @@ func NewServer(h av.Handler, rtmpAddr string) *Server {
 }
 
 func JWTMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if len(configure.RtmpServercfg.JWTCfg.Secret) > 0 {
-			var algorithm jwt.SigningMethod
-			if len(configure.RtmpServercfg.JWTCfg.Algorithm) > 0 {
-				algorithm = jwt.GetSigningMethod(configure.RtmpServercfg.JWTCfg.Algorithm)
-			}
+	var algorithm jwt.SigningMethod
+	var secret []byte
+	if len(configure.RtmpServercfg.JWTCfg.Secret) > 0 {
+		secret = []byte(configure.RtmpServercfg.JWTCfg.Secret)
 
-			if algorithm == nil {
-				algorithm = jwt.SigningMethodHS256
-			}
+		if len(configure.RtmpServercfg.JWTCfg.Algorithm) > 0 {
+			algorithm = jwt.GetSigningMethod(configure.RtmpServercfg.JWTCfg.Algorithm)
+		}
+
+		if algorithm == nil {
+			algorithm = jwt.SigningMethodHS256
+		}
+
+		// Create the Claims
+		token := jwt.NewWithClaims(algorithm, &jwt.StandardClaims{})
+		ss, _ := token.SignedString(secret)
+
+		// Token to enter to dashboard
+		log.Infof("valid token: %v", ss)
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if len(secret) > 0 {
 
 			jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
 				Extractor: jwtmiddleware.FromFirst(jwtmiddleware.FromAuthHeader, jwtmiddleware.FromParameter("jwt")),
 				ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
-					return []byte(configure.RtmpServercfg.Secret), nil
+					return secret, nil
 				},
 				SigningMethod: algorithm,
+				ErrorHandler: func(w http.ResponseWriter, r *http.Request, err string) {
+					res := &Response{
+						w:      w,
+						Data:   "Invalid token",
+						Status: 403,
+					}
+					defer res.SendJson()
+				},
 			})
 
 			jwtMiddleware.HandlerWithNext(w, r, next.ServeHTTP)
@@ -192,8 +214,7 @@ func (server *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	resp, _ := json.Marshal(msgs)
-	res.Data = resp
+	res.Data = msgs
 }
 
 //http://127.0.0.1:8090/control/pull?&oper=start&app=live&name=123456&url=rtmp://192.168.16.136/live/123456

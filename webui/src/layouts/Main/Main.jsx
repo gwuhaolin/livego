@@ -15,10 +15,14 @@ const useStyles = makeStyles(theme => ({
         }
     },
     shiftContent: {
-        paddingLeft: 240
+        // paddingLeft: 240
     },
     content: {
-        height: '100%'
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        margin: '0 auto',
+        width: '80%'
     }
 }));
 
@@ -51,11 +55,11 @@ const Main = props => {
             })}
         >
             <Topbar onSidebarOpen={handleSidebarOpen}/>
-            <Sidebar
+            {/* <Sidebar
                 onClose={handleSidebarClose}
                 open={shouldOpenSidebar}
                 variant={isDesktop ? 'persistent' : 'temporary'}
-            />
+            /> */}
             <main className={classes.content}>
                 {children}
                 <Footer/>
