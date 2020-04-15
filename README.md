@@ -1,6 +1,8 @@
-[![Test](https://github.com/gwuhaolin/livego/workflows/Test/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ATest)
+<p align='center'>
+    <img src='./logo.png' width='200px' height='80px'/>
+</p>
 
-<img src='./logo.png' width='130px' height='50px'/>
+[![Test](https://github.com/gwuhaolin/livego/workflows/Test/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ATest)
 
 Simple and efficient live broadcast server:
 - Very simple to install and use;
