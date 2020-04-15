@@ -64,7 +64,7 @@ var defaultConf = ServerCfg{
 	WriteTimeout: 10,
 	ReadTimeout:  10,
 	GopNum:       1,
-	Server: []Application{{
+	Server: Applications{{
 		Appname:    "live",
 		Live:       true,
 		Hls:        true,
@@ -81,13 +81,15 @@ func initLog() {
 	}
 }
 
-func LoadConfig() {
+func init() {
 	defer Init()
 
 	// Default config
 	b, _ := json.Marshal(defaultConf)
 	defaultConfig := bytes.NewReader(b)
-	Config.MergeConfig(defaultConfig)
+	viper.SetConfigType("json")
+	viper.ReadConfig(defaultConfig)
+	Config.MergeConfigMap(viper.AllSettings())
 
 	// Flags
 	pflag.String("rtmp_addr", ":1935", "RTMP server listen address")
@@ -110,6 +112,8 @@ func LoadConfig() {
 	if err != nil {
 		log.Warning(err)
 		log.Info("Using default config")
+	} else {
+		Config.MergeInConfig()
 	}
 
 	// Environment
@@ -121,6 +125,7 @@ func LoadConfig() {
 	// Log
 	initLog()
 
+	// Print final config
 	c := ServerCfg{}
 	Config.Unmarshal(&c)
 	log.Debugf("Current configurations: \n%# v", pretty.Formatter(c))
