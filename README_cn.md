@@ -3,7 +3,7 @@
 </p>
 
 [![Test](https://github.com/gwuhaolin/livego/workflows/Test/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ATest)
-[![Release](https://github.com/gwuhaolin/livego/workflows/release/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ARelease)
+[![Release](https://github.com/gwuhaolin/livego/workflows/Release/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ARelease)
 
 简单高效的直播服务器：
 - 安装和使用非常简单；
@@ -29,7 +29,7 @@
 直接下载编译好的[二进制文件](https://github.com/gwuhaolin/livego/releases)后，在命令行中执行。
 
 #### 从 Docker 启动
-执行`docker run -p 1935:1935 -p 7001:7001 -p 7002:7002 -d --name livego gwuhaolin/livego`启动
+执行`docker run -p 1935:1935 -p 7001:7001 -p 7002:7002 -p 8090:8090 -d gwuhaolin/livego`启动
 
 #### 从源码编译
 1. 下载源码 `git clone https://github.com/gwuhaolin/livego.git`
@@ -37,8 +37,8 @@
 
 ## 使用
 1. 启动服务：执行 `livego` 二进制文件启动 livego 服务；
-2. 访问 `http://localhost:8090/control/get?room=movie` 获取一个房间的key.
-3. 推流: 通过`RTMP`协议推送视频流到地址 `rtmp://localhost:1935/{appname}/{channelkey}`, 例如： 使用 `ffmpeg -re -i demo.flv -c copy -f flv rtmp://localhost:1935/{appname}/{channelkey}` 推流;
+2. 访问 `http://localhost:8090/control/get?room=movie` 获取一个房间的 channelkey.
+3. 推流: 通过`RTMP`协议推送视频流到地址 `rtmp://localhost:1935/{appname}/{channelkey}` (appname默认是`live`), 例如： 使用 `ffmpeg -re -i demo.flv -c copy -f flv rtmp://localhost:1935/{appname}/{channelkey}` 推流;
 4. 播放: 支持多种播放协议，播放地址如下:
     - `RTMP`:`rtmp://localhost:1935/{appname}/{channelkey}`
     - `FLV`:`http://127.0.0.1:7001/{appname}/{channelkey}.flv`
