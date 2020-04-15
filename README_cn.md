@@ -39,10 +39,9 @@
 2. 访问 `http://localhost:8090/control/get?room=movie` 获取一个房间的key.
 3. 推流: 通过`RTMP`协议推送视频流到地址 `rtmp://localhost:1935/{appname}/{channelkey}`, 例如： 使用 `ffmpeg -re -i demo.flv -c copy -f flv rtmp://localhost:1935/{appname}/{channelkey}` 推流;
 4. 播放: 支持多种播放协议，播放地址如下:
-
-    -`RTMP`:`rtmp://localhost:1935/{appname}/{channelkey}`
-    -`FLV`:`http://127.0.0.1:7001/{appname}/{channelkey}.flv`
-    -`HLS`:`http://127.0.0.1:7002/{appname}/{channelkey}.m3u8`
+    - `RTMP`:`rtmp://localhost:1935/{appname}/{channelkey}`
+    - `FLV`:`http://127.0.0.1:7001/{appname}/{channelkey}.flv`
+    - `HLS`:`http://127.0.0.1:7002/{appname}/{channelkey}.m3u8`
 
 所有配置项: 
 ```bash
