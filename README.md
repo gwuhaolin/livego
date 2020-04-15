@@ -2,7 +2,10 @@
     <img src='./logo.png' width='200px' height='80px'/>
 </p>
 
+[中文](./README_cn.md)
+
 [![Test](https://github.com/gwuhaolin/livego/workflows/Test/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ATest)
+[![Release](https://github.com/gwuhaolin/livego/workflows/Release/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ARelease)
 
 Simple and efficient live broadcast server:
 - Very simple to install and use;
@@ -28,13 +31,22 @@ Simple and efficient live broadcast server:
 After directly downloading the compiled [binary file](https://github.com/gwuhaolin/livego/releases), execute it on the command line.
 
 #### Boot from Docker
-Run `docker run -p 1935:1935 -p 7001:7001 -p 7002:7002 -d --name livego gwuhaolin/livego` to start
+Run `docker run -p 1935:1935 -p 7001:7001 -p 7002:7002 -p 8090:8090 -d gwuhaolin/livego` to start
 
 #### Compile from source
 1. Download the source code `git clone https://github.com/gwuhaolin/livego.git`
 2. Go to the livego directory and execute `go build` or `make build`
 
 ## Use
+1. Start the service: execute the livego binary file or `make run` to start the livego service;
+2. Get a channelkey from `http://localhost:8090/control/get?room=movie` and copy data like your channelkey.
+3. Upstream push: Push the video stream to `rtmp://localhost:1935/{appname}/{channelkey}` through the` RTMP` protocol(default appname is `live`), for example, use `ffmpeg -re -i demo.flv -c copy -f flv rtmp://localhost:1935/{appname}/{channelkey}` push;
+4. Downstream playback: The following three playback protocols are supported, and the playback address is as follows:
+    - `RTMP`:`rtmp://localhost:1935/{appname}/{channelkey}`
+    - `FLV`:`http://127.0.0.1:7001/{appname}/{channelkey}.flv`
+    - `HLS`:`http://127.0.0.1:7002/{appname}/{channelkey}.m3u8`
+   
+all options: 
 ```bash
 ./livego  -h
 Usage of ./livego:
@@ -49,13 +61,6 @@ Usage of ./livego:
       --rtmp_addr string      RTMP server listen address (default ":1935")
       --write_timeout int     write time out (default 10)
 ```
-2. Start the service: execute the livego binary file or `make run` to start the livego service;
-3. Get a channelkey `curl http://localhost:8090/control/get?room=movie` and copy data like your channelkey.
-4. Upstream push: Push the video stream to `rtmp://localhost:1935/live/movie`(`rtmp://localhost:1935/{appname}/{channelkey}`) through the` RTMP` protocol, for example, use `ffmpeg -re -i demo.flv -c copy -f flv rtmp://localhost:1935/live/movie` push;
-5. Downstream playback: The following three playback protocols are supported, and the playback address is as follows:
-    -`RTMP`:`rtmp://localhost:1935/live/movie`
-    -`FLV`:`http://127.0.0.1:7001/live/movie.flv`
-    -`HLS`:`http://127.0.0.1:7002/live/movie.m3u8`
 
 ### [Use with flv.js](https://github.com/gwuhaolin/blog/issues/3)
 
