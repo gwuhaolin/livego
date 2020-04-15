@@ -1,34 +1,25 @@
 package main
 
 import (
-	"flag"
-	"log"
-	"net"
-	"time"
-
+	"fmt"
 	"livego/configure"
+	"livego/protocol/api"
 	"livego/protocol/hls"
 	"livego/protocol/httpflv"
-	"livego/protocol/httpopera"
 	"livego/protocol/rtmp"
+	"net"
+	"path"
+	"runtime"
+	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
-var (
-	version        = "master"
-	rtmpAddr       = flag.String("rtmp-addr", ":1935", "RTMP server listen address")
-	httpFlvAddr    = flag.String("httpflv-addr", ":7001", "HTTP-FLV server listen address")
-	hlsAddr        = flag.String("hls-addr", ":7002", "HLS server listen address")
-	operaAddr      = flag.String("manage-addr", ":8090", "HTTP manage interface server listen address")
-	configfilename = flag.String("config-file", "livego.json", "configure filename")
-)
-
-func init() {
-	log.SetFlags(log.Lshortfile | log.Ltime | log.Ldate)
-	flag.Parse()
-}
+var VERSION = "master"
 
 func startHls() *hls.Server {
-	hlsListen, err := net.Listen("tcp", *hlsAddr)
+	hlsAddr := configure.Config.GetString("hls_addr")
+	hlsListen, err := net.Listen("tcp", hlsAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,17 +28,21 @@ func startHls() *hls.Server {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Println("HLS server panic: ", r)
+				log.Error("HLS server panic: ", r)
 			}
 		}()
-		log.Println("HLS listen On", *hlsAddr)
+		log.Info("HLS listen On ", hlsAddr)
 		hlsServer.Serve(hlsListen)
 	}()
 	return hlsServer
 }
 
+var rtmpAddr string
+
 func startRtmp(stream *rtmp.RtmpStream, hlsServer *hls.Server) {
-	rtmpListen, err := net.Listen("tcp", *rtmpAddr)
+	rtmpAddr = configure.Config.GetString("rtmp_addr")
+
+	rtmpListen, err := net.Listen("tcp", rtmpAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -56,23 +51,25 @@ func startRtmp(stream *rtmp.RtmpStream, hlsServer *hls.Server) {
 
 	if hlsServer == nil {
 		rtmpServer = rtmp.NewRtmpServer(stream, nil)
-		log.Printf("hls server disable....")
+		log.Info("HLS server disable....")
 	} else {
 		rtmpServer = rtmp.NewRtmpServer(stream, hlsServer)
-		log.Printf("hls server enable....")
+		log.Info("HLS server enable....")
 	}
 
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("RTMP server panic: ", r)
+			log.Error("RTMP server panic: ", r)
 		}
 	}()
-	log.Println("RTMP Listen On", *rtmpAddr)
+	log.Info("RTMP Listen On ", rtmpAddr)
 	rtmpServer.Serve(rtmpListen)
 }
 
 func startHTTPFlv(stream *rtmp.RtmpStream) {
-	flvListen, err := net.Listen("tcp", *httpFlvAddr)
+	httpflvAddr := configure.Config.GetString("httpflv_addr")
+
+	flvListen, err := net.Listen("tcp", httpflvAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -81,48 +78,68 @@ func startHTTPFlv(stream *rtmp.RtmpStream) {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Println("HTTP-FLV server panic: ", r)
+				log.Error("HTTP-FLV server panic: ", r)
 			}
 		}()
-		log.Println("HTTP-FLV listen On", *httpFlvAddr)
+		log.Info("HTTP-FLV listen On ", httpflvAddr)
 		hdlServer.Serve(flvListen)
 	}()
 }
 
-func startHTTPOpera(stream *rtmp.RtmpStream) {
-	if *operaAddr != "" {
-		opListen, err := net.Listen("tcp", *operaAddr)
+func startAPI(stream *rtmp.RtmpStream) {
+	apiAddr := configure.Config.GetString("api_addr")
+
+	if apiAddr != "" {
+		opListen, err := net.Listen("tcp", apiAddr)
 		if err != nil {
 			log.Fatal(err)
 		}
-		opServer := httpopera.NewServer(stream, *rtmpAddr)
+		opServer := api.NewServer(stream, rtmpAddr)
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
-					log.Println("HTTP-Operation server panic: ", r)
+					log.Error("HTTP-API server panic: ", r)
 				}
 			}()
-			log.Println("HTTP-Operation listen On", *operaAddr)
+			log.Info("HTTP-API listen On ", apiAddr)
 			opServer.Serve(opListen)
 		}()
 	}
 }
 
+func init() {
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+			filename := path.Base(f.File)
+			return fmt.Sprintf("%s()", f.Function), fmt.Sprintf(" %s:%d", filename, f.Line)
+		},
+	})
+}
+
 func main() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("livego panic: ", r)
+			log.Error("livego panic: ", r)
 			time.Sleep(1 * time.Second)
 		}
 	}()
-	log.Println("start livego, version", version)
-	configure.LoadConfig(*configfilename)
+
+	configure.LoadConfig()
+
+	log.Infof(`
+     _     _            ____       
+    | |   (_)_   _____ / ___| ___  
+    | |   | \ \ / / _ \ |  _ / _ \ 
+    | |___| |\ V /  __/ |_| | (_) |
+    |_____|_| \_/ \___|\____|\___/ 
+        version: %s
+	`, VERSION)
 
 	stream := rtmp.NewRtmpStream()
 	hlsServer := startHls()
 	startHTTPFlv(stream)
-	startHTTPOpera(stream)
+	startAPI(stream)
 
 	startRtmp(stream, hlsServer)
-	//startRtmp(stream, nil)
 }

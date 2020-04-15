@@ -1,7 +1,7 @@
 package aac
 
 import (
-	"errors"
+	"fmt"
 	"io"
 
 	"livego/av"
@@ -26,8 +26,8 @@ type mpegCfgInfo struct {
 var aacRates = []int{96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350}
 
 var (
-	specificBufInvalid = errors.New("audio mpegspecific error")
-	audioBufInvalid    = errors.New("audiodata  invalid")
+	specificBufInvalid = fmt.Errorf("audio mpegspecific error")
+	audioBufInvalid    = fmt.Errorf("audiodata  invalid")
 )
 
 const (

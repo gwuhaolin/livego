@@ -2,6 +2,7 @@ package amf
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 )
 
@@ -22,13 +23,13 @@ func (d *Decoder) DecodeAmf0(r io.Reader) (interface{}, error) {
 	case AMF0_OBJECT_MARKER:
 		return d.DecodeAmf0Object(r, false)
 	case AMF0_MOVIECLIP_MARKER:
-		return nil, Error("decode amf0: unsupported type movieclip")
+		return nil, fmt.Errorf("decode amf0: unsupported type movieclip")
 	case AMF0_NULL_MARKER:
 		return d.DecodeAmf0Null(r, false)
 	case AMF0_UNDEFINED_MARKER:
 		return d.DecodeAmf0Undefined(r, false)
 	case AMF0_REFERENCE_MARKER:
-		return nil, Error("decode amf0: unsupported type reference")
+		return nil, fmt.Errorf("decode amf0: unsupported type reference")
 	case AMF0_ECMA_ARRAY_MARKER:
 		return d.DecodeAmf0EcmaArray(r, false)
 	case AMF0_STRICT_ARRAY_MARKER:
@@ -40,7 +41,7 @@ func (d *Decoder) DecodeAmf0(r io.Reader) (interface{}, error) {
 	case AMF0_UNSUPPORTED_MARKER:
 		return d.DecodeAmf0Unsupported(r, false)
 	case AMF0_RECORDSET_MARKER:
-		return nil, Error("decode amf0: unsupported type recordset")
+		return nil, fmt.Errorf("decode amf0: unsupported type recordset")
 	case AMF0_XML_DOCUMENT_MARKER:
 		return d.DecodeAmf0XmlDocument(r, false)
 	case AMF0_TYPED_OBJECT_MARKER:
@@ -49,7 +50,7 @@ func (d *Decoder) DecodeAmf0(r io.Reader) (interface{}, error) {
 		return d.DecodeAmf3(r)
 	}
 
-	return nil, Error("decode amf0: unsupported type %d", marker)
+	return nil, fmt.Errorf("decode amf0: unsupported type %d", marker)
 }
 
 // marker: 1 byte 0x00
@@ -61,7 +62,7 @@ func (d *Decoder) DecodeAmf0Number(r io.Reader, decodeMarker bool) (result float
 
 	err = binary.Read(r, binary.BigEndian, &result)
 	if err != nil {
-		return float64(0), Error("amf0 decode: unable to read number: %s", err)
+		return float64(0), fmt.Errorf("amf0 decode: unable to read number: %s", err)
 	}
 
 	return
@@ -85,7 +86,7 @@ func (d *Decoder) DecodeAmf0Boolean(r io.Reader, decodeMarker bool) (result bool
 		return true, nil
 	}
 
-	return false, Error("decode amf0: unexpected value %v for boolean", b)
+	return false, fmt.Errorf("decode amf0: unexpected value %v for boolean", b)
 }
 
 // marker: 1 byte 0x02
@@ -100,12 +101,12 @@ func (d *Decoder) DecodeAmf0String(r io.Reader, decodeMarker bool) (result strin
 	var length uint16
 	err = binary.Read(r, binary.BigEndian, &length)
 	if err != nil {
-		return "", Error("decode amf0: unable to decode string length: %s", err)
+		return "", fmt.Errorf("decode amf0: unable to decode string length: %s", err)
 	}
 
 	var bytes = make([]byte, length)
 	if bytes, err = ReadBytes(r, int(length)); err != nil {
-		return "", Error("decode amf0: unable to decode string value: %s", err)
+		return "", fmt.Errorf("decode amf0: unable to decode string value: %s", err)
 	}
 
 	return string(bytes), nil
@@ -131,7 +132,7 @@ func (d *Decoder) DecodeAmf0Object(r io.Reader, decodeMarker bool) (Object, erro
 
 		if key == "" {
 			if err = AssertMarker(r, true, AMF0_OBJECT_END_MARKER); err != nil {
-				return nil, Error("decode amf0: expected object end marker: %s", err)
+				return nil, fmt.Errorf("decode amf0: expected object end marker: %s", err)
 			}
 
 			break
@@ -139,7 +140,7 @@ func (d *Decoder) DecodeAmf0Object(r io.Reader, decodeMarker bool) (Object, erro
 
 		value, err := d.DecodeAmf0(r)
 		if err != nil {
-			return nil, Error("decode amf0: unable to decode object value: %s", err)
+			return nil, fmt.Errorf("decode amf0: unable to decode object value: %s", err)
 		}
 
 		result[key] = value
@@ -176,11 +177,11 @@ func (d *Decoder) DecodeAmf0Reference(r io.Reader, decodeMarker bool) (interface
 
 	err = binary.Read(r, binary.BigEndian, &ref)
 	if err != nil {
-		return nil, Error("decode amf0: unable to decode reference id: %s", err)
+		return nil, fmt.Errorf("decode amf0: unable to decode reference id: %s", err)
 	}
 
 	if int(ref) > len(d.refCache) {
-		return nil, Error("decode amf0: bad reference %d (current length %d)", ref, len(d.refCache))
+		return nil, fmt.Errorf("decode amf0: bad reference %d (current length %d)", ref, len(d.refCache))
 	}
 
 	result := d.refCache[ref]
@@ -205,7 +206,7 @@ func (d *Decoder) DecodeAmf0EcmaArray(r io.Reader, decodeMarker bool) (Object, e
 
 	result, err := d.DecodeAmf0Object(r, false)
 	if err != nil {
-		return nil, Error("decode amf0: unable to decode ecma array object: %s", err)
+		return nil, fmt.Errorf("decode amf0: unable to decode ecma array object: %s", err)
 	}
 
 	return result, nil
@@ -223,7 +224,7 @@ func (d *Decoder) DecodeAmf0StrictArray(r io.Reader, decodeMarker bool) (result 
 	var length uint32
 	err = binary.Read(r, binary.BigEndian, &length)
 	if err != nil {
-		return nil, Error("decode amf0: unable to decode strict array length: %s", err)
+		return nil, fmt.Errorf("decode amf0: unable to decode strict array length: %s", err)
 	}
 
 	d.refCache = append(d.refCache, result)
@@ -231,7 +232,7 @@ func (d *Decoder) DecodeAmf0StrictArray(r io.Reader, decodeMarker bool) (result 
 	for i := uint32(0); i < length; i++ {
 		tmp, err := d.DecodeAmf0(r)
 		if err != nil {
-			return nil, Error("decode amf0: unable to decode strict array object: %s", err)
+			return nil, fmt.Errorf("decode amf0: unable to decode strict array object: %s", err)
 		}
 		result = append(result, tmp)
 	}
@@ -250,11 +251,11 @@ func (d *Decoder) DecodeAmf0Date(r io.Reader, decodeMarker bool) (result float64
 	}
 
 	if result, err = d.DecodeAmf0Number(r, false); err != nil {
-		return float64(0), Error("decode amf0: unable to decode float in date: %s", err)
+		return float64(0), fmt.Errorf("decode amf0: unable to decode float in date: %s", err)
 	}
 
 	if _, err = ReadBytes(r, 2); err != nil {
-		return float64(0), Error("decode amf0: unable to read 2 trail bytes in date: %s", err)
+		return float64(0), fmt.Errorf("decode amf0: unable to read 2 trail bytes in date: %s", err)
 	}
 
 	return
@@ -272,12 +273,12 @@ func (d *Decoder) DecodeAmf0LongString(r io.Reader, decodeMarker bool) (result s
 	var length uint32
 	err = binary.Read(r, binary.BigEndian, &length)
 	if err != nil {
-		return "", Error("decode amf0: unable to decode long string length: %s", err)
+		return "", fmt.Errorf("decode amf0: unable to decode long string length: %s", err)
 	}
 
 	var bytes = make([]byte, length)
 	if bytes, err = ReadBytes(r, int(length)); err != nil {
-		return "", Error("decode amf0: unable to decode long string value: %s", err)
+		return "", fmt.Errorf("decode amf0: unable to decode long string value: %s", err)
 	}
 
 	return string(bytes), nil
@@ -323,12 +324,12 @@ func (d *Decoder) DecodeAmf0TypedObject(r io.Reader, decodeMarker bool) (TypedOb
 
 	result.Type, err = d.DecodeAmf0String(r, false)
 	if err != nil {
-		return result, Error("decode amf0: typed object unable to determine type: %s", err)
+		return result, fmt.Errorf("decode amf0: typed object unable to determine type: %s", err)
 	}
 
 	result.Object, err = d.DecodeAmf0Object(r, false)
 	if err != nil {
-		return result, Error("decode amf0: typed object unable to determine object: %s", err)
+		return result, fmt.Errorf("decode amf0: typed object unable to determine object: %s", err)
 	}
 
 	return result, nil

@@ -1,10 +1,14 @@
 package configure
 
 import (
+	"bytes"
 	"encoding/json"
-	"flag"
-	"io/ioutil"
-	"log"
+	"strings"
+
+	"github.com/kr/pretty"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 )
 
 /*
@@ -12,112 +16,138 @@ import (
   "server": [
     {
       "appname": "live",
-      "liveon": "on",
-	  "hlson": "on",
+      "live": true,
+	  "hls": true,
 	  "static_push": []
     }
   ]
 }
 */
-var (
-	roomKeySaveFile = flag.String("KeyFile", "room_keys.json", "path to save room keys")
-	RedisAddr       = flag.String("redis_addr", "", "redis addr to save room keys ex. localhost:6379")
-	RedisPwd        = flag.String("redis_pwd", "", "redis password")
-)
 
 type Application struct {
-	Appname    string   `json:"appname"`
-	Liveon     string   `json:"liveon"`
-	Hlson      string   `json:"hlson"`
-	StaticPush []string `json:"static_push"`
+	Appname    string   `mapstructure:"appname"`
+	Live       bool     `mapstructure:"live"`
+	Hls        bool     `mapstructure:"hls"`
+	StaticPush []string `mapstructure:"static_push"`
 }
 
-type JWTCfg struct {
-	Secret    string `json:"secret"`
-	Algorithm string `json:"algorithm"`
-}
+type Applications []Application
 
+type JWT struct {
+	Secret    string `mapstructure:"secret"`
+	Algorithm string `mapstructure:"algorithm"`
+}
 type ServerCfg struct {
-	KeyFile   string `json:"key_file"`
-	RedisAddr string `json:"redis_addr"`
-	RedisPwd  string `json:"redis_pwd"`
-	JWTCfg    `json:"jwt"`
-	Server    []Application `json:"server"`
+	Level        string        `mapstructure:"level"`
+	ConfigFile   string        `mapstructure:"config_file"`
+	FLVDir       string        `mapstructure:"flv_dir"`
+	RTMPAddr     string        `mapstructure:"rtmp_addr"`
+	HTTPFLVAddr  string        `mapstructure:"httpflv_addr"`
+	HLSAddr      string        `mapstructure:"hls_addr"`
+	APIAddr      string        `mapstructure:"api_addr"`
+	RedisAddr    string        `mapstructure:"redis_addr"`
+	RedisPwd     string        `mapstructure:"redis_pwd"`
+	ReadTimeout  int           `mapstructure:"read_timeout"`
+	WriteTimeout int           `mapstructure:"write_timeout"`
+	GopNum       int           `mapstructure:"gop_num"`
+	JWT          JWT           `mapstructure:"jwt"`
+	Server       []Application `mapstructure:"server"`
 }
 
 // default config
-var RtmpServercfg = ServerCfg{
+var defaultConf = ServerCfg{
+	ConfigFile:   "livego.yaml",
+	RTMPAddr:     ":1935",
+	HTTPFLVAddr:  ":7001",
+	HLSAddr:      ":7002",
+	APIAddr:      ":8090",
+	WriteTimeout: 10,
+	ReadTimeout:  10,
+	GopNum:       1,
 	Server: []Application{{
-		Appname:    "livego",
-		Liveon:     "on",
-		Hlson:      "on",
+		Appname:    "live",
+		Live:       true,
+		Hls:        true,
 		StaticPush: nil,
 	}},
 }
 
-func LoadConfig(configfilename string) {
-	log.Printf("starting load configure file %s", configfilename)
-	data, err := ioutil.ReadFile(configfilename)
+var Config = viper.New()
+
+func initLog() {
+	if l, err := log.ParseLevel(Config.GetString("level")); err == nil {
+		log.SetLevel(l)
+		log.SetReportCaller(l == log.DebugLevel)
+	}
+}
+
+func LoadConfig() {
+	defer Init()
+
+	// Default config
+	b, _ := json.Marshal(defaultConf)
+	defaultConfig := bytes.NewReader(b)
+	Config.MergeConfig(defaultConfig)
+
+	// Flags
+	pflag.String("rtmp_addr", ":1935", "RTMP server listen address")
+	pflag.String("httpflv_addr", ":7001", "HTTP-FLV server listen address")
+	pflag.String("hls_addr", ":7002", "HLS server listen address")
+	pflag.String("api_addr", ":8090", "HTTP manage interface server listen address")
+	pflag.String("config_file", "livego.yaml", "configure filename")
+	pflag.String("level", "info", "Log level")
+	pflag.String("flv_dir", "tmp", "output flv file at flvDir/APP/KEY_TIME.flv")
+	pflag.Int("read_timeout", 10, "read time out")
+	pflag.Int("write_timeout", 10, "write time out")
+	pflag.Int("gop_num", 1, "gop num")
+	pflag.Parse()
+	Config.BindPFlags(pflag.CommandLine)
+
+	// File
+	Config.SetConfigFile(Config.GetString("config_file"))
+	Config.AddConfigPath(".")
+	err := Config.ReadInConfig()
 	if err != nil {
-		log.Printf("ReadFile %s error:%v", configfilename, err)
+		log.Warning(err)
+		log.Info("Using default config")
 	}
 
-	err = json.Unmarshal(data, &RtmpServercfg)
-	if err != nil {
-		log.Printf("json.Unmarshal error:%v", err)
-	}
-	log.Printf("get config json data:%v", RtmpServercfg)
+	// Environment
+	replacer := strings.NewReplacer(".", "_")
+	Config.SetEnvKeyReplacer(replacer)
+	Config.AllowEmptyEnv(true)
+	Config.AutomaticEnv()
 
-	Init()
-}
+	// Log
+	initLog()
 
-func GetKeyFile() *string {
-	if len(RtmpServercfg.KeyFile) > 0 {
-		*roomKeySaveFile = RtmpServercfg.KeyFile
-	}
-
-	return roomKeySaveFile
-}
-
-func GetRedisAddr() *string {
-	if len(RtmpServercfg.RedisAddr) > 0 {
-		*RedisAddr = RtmpServercfg.RedisAddr
-	}
-
-	if len(*RedisAddr) == 0 {
-		return nil
-	}
-
-	return RedisAddr
-}
-
-func GetRedisPwd() *string {
-	if len(RtmpServercfg.RedisPwd) > 0 {
-		*RedisPwd = RtmpServercfg.RedisPwd
-	}
-
-	return RedisPwd
+	c := ServerCfg{}
+	Config.Unmarshal(&c)
+	log.Debugf("Current configurations: \n%# v", pretty.Formatter(c))
 }
 
 func CheckAppName(appname string) bool {
-	for _, app := range RtmpServercfg.Server {
-		if (app.Appname == appname) && (app.Liveon == "on") {
-			return true
+	apps := Applications{}
+	Config.UnmarshalKey("server", &apps)
+	for _, app := range apps {
+		if app.Appname == appname {
+			return app.Live
 		}
 	}
 	return false
 }
 
 func GetStaticPushUrlList(appname string) ([]string, bool) {
-	for _, app := range RtmpServercfg.Server {
-		if (app.Appname == appname) && (app.Liveon == "on") {
+	apps := Applications{}
+	Config.UnmarshalKey("server", &apps)
+	for _, app := range apps {
+		if (app.Appname == appname) && app.Live {
 			if len(app.StaticPush) > 0 {
 				return app.StaticPush, true
 			} else {
 				return nil, false
 			}
 		}
-
 	}
 	return nil, false
 }

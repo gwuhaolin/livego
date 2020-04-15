@@ -2,7 +2,7 @@ package h264
 
 import (
 	"bytes"
-	"errors"
+	"fmt"
 	"io"
 )
 
@@ -34,14 +34,14 @@ const (
 )
 
 var (
-	decDataNil        = errors.New("dec buf is nil")
-	spsDataError      = errors.New("sps data error")
-	ppsHeaderError    = errors.New("pps header error")
-	ppsDataError      = errors.New("pps data error")
-	naluHeaderInvalid = errors.New("nalu header invalid")
-	videoDataInvalid  = errors.New("video data not match")
-	dataSizeNotMatch  = errors.New("data size not match")
-	naluBodyLenError  = errors.New("nalu body len error")
+	decDataNil        = fmt.Errorf("dec buf is nil")
+	spsDataError      = fmt.Errorf("sps data error")
+	ppsHeaderError    = fmt.Errorf("pps header error")
+	ppsDataError      = fmt.Errorf("pps data error")
+	naluHeaderInvalid = fmt.Errorf("nalu header invalid")
+	videoDataInvalid  = fmt.Errorf("video data not match")
+	dataSizeNotMatch  = fmt.Errorf("data size not match")
+	naluBodyLenError  = fmt.Errorf("nalu body len error")
 )
 
 var startCode = []byte{0x00, 0x00, 0x00, 0x01}
@@ -132,7 +132,7 @@ func (parser *Parser) isNaluHeader(src []byte) bool {
 
 func (parser *Parser) naluSize(src []byte) (int, error) {
 	if len(src) < naluBytesLen {
-		return 0, errors.New("nalusizedata invalid")
+		return 0, fmt.Errorf("nalusizedata invalid")
 	}
 	buf := src[:naluBytesLen]
 	size := int(0)

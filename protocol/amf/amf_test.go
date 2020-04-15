@@ -2,7 +2,6 @@ package amf
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -17,12 +16,12 @@ func EncodeAndDecode(val interface{}, ver Version) (result interface{}, err erro
 
 	_, err = enc.Encode(buf, val, ver)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("error in encode: %s", err))
+		return nil, fmt.Errorf("error in encode: %s", err)
 	}
 
 	result, err = dec.Decode(buf, ver)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("error in decode: %s", err))
+		return nil, fmt.Errorf("error in decode: %s", err)
 	}
 
 	return
@@ -108,7 +107,7 @@ func TestAmf0Array(t *testing.T) {
 
 	res, err := EncodeAndDecode(arr, 0)
 	if err != nil {
-		t.Error("amf0 object: %s", err)
+		t.Errorf("amf0 object: %s", err)
 	}
 
 	result, ok := res.(Array)
@@ -170,7 +169,7 @@ func TestAmf3Array(t *testing.T) {
 
 	res, err := EncodeAndDecode(arr, 3)
 	if err != nil {
-		t.Error("amf3 object: %s", err)
+		t.Errorf("amf3 object: %s", err)
 	}
 
 	result, ok := res.(Array)
