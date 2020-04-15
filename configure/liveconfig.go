@@ -81,7 +81,7 @@ func initLog() {
 	}
 }
 
-func LoadConfig() {
+func init() {
 	defer Init()
 
 	// Default config
