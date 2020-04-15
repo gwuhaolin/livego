@@ -1,4 +1,4 @@
-![Test](https://github.com/gwuhaolin/livego/workflows/Test/badge.svg)
+[![Test](https://github.com/gwuhaolin/livego/workflows/Test/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ATest)
 
 <img src='./logo.png' width='130px' height='50px'/>
 
