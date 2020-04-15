@@ -65,7 +65,7 @@ var defaultConf = ServerCfg{
 	ReadTimeout:  10,
 	GopNum:       1,
 	Server: []Application{{
-		Appname:    "livego",
+		Appname:    "live",
 		Live:       true,
 		Hls:        true,
 		StaticPush: nil,
@@ -108,7 +108,7 @@ func LoadConfig() {
 	Config.AddConfigPath(".")
 	err := Config.ReadInConfig()
 	if err != nil {
-		log.Error(err)
+		log.Warning(err)
 		log.Info("Using default config")
 	}
 

@@ -20,7 +20,7 @@ Simple and efficient live broadcast server:
 #### Supported encoding formats
 - H264
 - AAC
-- sMP3
+- MP3
 
 ## Installation
 After directly downloading the compiled [binary file](https://github.com/gwuhaolin/livego/releases), execute it on the command line.
@@ -48,8 +48,9 @@ Usage of ./livego:
       --write_timeout int     write time out (default 10)
 ```
 2. Start the service: execute the livego binary file or `make run` to start the livego service;
-3. Upstream push: Push the video stream to `rtmp://localhost:1935/live/movie` through the` RTMP` protocol, for example, use `ffmpeg -re -i demo.flv -c copy -f flv rtmp://localhost:1935/live/movie` push;
-4. Downstream playback: The following three playback protocols are supported, and the playback address is as follows:
+3. Get a channelkey `curl http://localhost:8090/control/get?room=movie` and copy data like your channelkey.
+4. Upstream push: Push the video stream to `rtmp://localhost:1935/live/movie`(`rtmp://localhost:1935/{appname}/{channelkey}`) through the` RTMP` protocol, for example, use `ffmpeg -re -i demo.flv -c copy -f flv rtmp://localhost:1935/live/movie` push;
+5. Downstream playback: The following three playback protocols are supported, and the playback address is as follows:
     -`RTMP`:`rtmp://localhost:1935/live/movie`
     -`FLV`:`http://127.0.0.1:7001/live/movie.flv`
     -`HLS`:`http://127.0.0.1:7002/live/movie.m3u8`
