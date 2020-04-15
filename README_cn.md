@@ -26,8 +26,6 @@
 
 ## 安装
 直接下载编译好的[二进制文件](https://github.com/gwuhaolin/livego/releases)后，在命令行中执行。
-## Installation
-After directly downloading the compiled [binary file] (https://github.com/gwuhaolin/livego/releases), execute it on the command line.
 
 #### 从 Docker 启动
 执行`docker run -p 1935:1935 -p 7001:7001 -p 7002:7002 -d --name livego gwuhaolin/livego`启动
@@ -49,16 +47,16 @@ After directly downloading the compiled [binary file] (https://github.com/gwuhao
 ```bash
 ./livego  -h
 Usage of ./livego:
-      --api_addr string       HTTP manage interface server listen address (default ":8090")
-      --config_file string    configure filename (default "livego.yaml")
-      --flv_dir string        output flv file at flvDir/APP/KEY_TIME.flv (default "tmp")
-      --gop_num int           gop num (default 1)
-      --hls_addr string       HLS server listen address (default ":7002")
-      --httpflv_addr string   HTTP-FLV server listen address (default ":7001")
-      --level string          Log level (default "info")
-      --read_timeout int      read time out (default 10)
-      --rtmp_addr string      RTMP server listen address (default ":1935")
-      --write_timeout int     write time out (default 10)
+      --api_addr string       HTTP管理访问监听地址 (default ":8090")
+      --config_file string    配置文件路径 (默认 "livego.yaml")
+      --flv_dir string        输出的 flv 文件路径 flvDir/APP/KEY_TIME.flv (默认 "tmp")
+      --gop_num int           gop 数量 (default 1)
+      --hls_addr string       HLS 服务监听地址 (默认 ":7002")
+      --httpflv_addr string   HTTP-FLV server listen address (默认 ":7001")
+      --level string          日志等级 (默认 "info")
+      --read_timeout int      读超时时间 (默认 10)
+      --rtmp_addr string      RTMP 服务监听地址 (默认 ":1935")
+      --write_timeout int     写超时时间 (默认 10)
 ```
 
 ### [和 flv.js 搭配使用](https://github.com/gwuhaolin/blog/issues/3)
