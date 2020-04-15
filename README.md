@@ -3,6 +3,7 @@
 </p>
 
 [![Test](https://github.com/gwuhaolin/livego/workflows/Test/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ATest)
+[![Release](https://github.com/gwuhaolin/livego/workflows/release/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ARelease)
 
 [中文](./README_cn.md)
 
