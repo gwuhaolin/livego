@@ -3,7 +3,6 @@ package hls
 import (
 	"bytes"
 	"container/list"
-	"errors"
 	"fmt"
 	"sync"
 )
@@ -13,7 +12,7 @@ const (
 )
 
 var (
-	ErrNoKey = errors.New("No key for cache")
+	ErrNoKey = fmt.Errorf("No key for cache")
 )
 
 type TSCacheItem struct {

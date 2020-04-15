@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"errors"
+	"fmt"
 	"io"
 
 	"livego/av"
@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	errNoAudio = errors.New("demuxer no audio")
+	errNoAudio = fmt.Errorf("demuxer no audio")
 )
 
 type CodecParser struct {

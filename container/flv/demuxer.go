@@ -1,13 +1,12 @@
 package flv
 
 import (
-	"errors"
-
+	"fmt"
 	"livego/av"
 )
 
 var (
-	ErrAvcEndSEQ = errors.New("avc end sequence")
+	ErrAvcEndSEQ = fmt.Errorf("avc end sequence")
 )
 
 type Demuxer struct {

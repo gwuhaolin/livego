@@ -3,7 +3,8 @@ package amf
 import (
 	"bytes"
 	"fmt"
-	"log"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
