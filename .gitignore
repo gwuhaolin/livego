@@ -2,7 +2,7 @@
 .idea
 dist
 .vscode
-.tmp/
+tmp/
 vendor/
 node_modules/
 build/

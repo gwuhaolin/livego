@@ -30,7 +30,7 @@ COPY . /go/src/github.com/gwuhaolin/livego
 RUN rm -rf /go/src/github.com/gwuhaolin/livego/static/
 COPY --from=webui /src/webui/static/ /go/src/github.com/gwuhaolin/livego/static/
 
-RUN make build
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o livego .
 
 ## IMAGE
 FROM alpine:3.10

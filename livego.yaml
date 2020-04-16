@@ -17,6 +17,6 @@
 # api_addr: ":8090"
 
 server:
-- appname: livego
+- appname: live
   live: true
   hls: true
