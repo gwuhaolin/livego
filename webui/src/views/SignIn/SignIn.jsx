@@ -84,8 +84,7 @@ const SignIn = (props) => {
     };
 
     const checkToken = (token) => {
-        axios.get(`http://localhost:8090/stat/livestat?jwt=${token}`).then(res => {
-            console.log(res)
+        axios.get(`/stat/livestat?jwt=${token}`).then(res => {
             onSuccess();
         }, err => {
             if (!token) return;
@@ -101,7 +100,7 @@ const SignIn = (props) => {
                 setError(JSON.stringify(err));
             }
         });
-    }
+    };
 
     // Check if have not the jwt enabled
     checkToken();

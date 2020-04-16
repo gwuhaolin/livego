@@ -53,7 +53,7 @@ all options:
 Usage of ./livego:
       --api_addr string       HTTP manage interface server listen address (default ":8090")
       --config_file string    configure filename (default "livego.yaml")
-      --dashboard             Enable dashboard
+      --dashboard             Enable dashboard on http://{api_addr}/dashboard
       --flv_dir string        output flv file at flvDir/APP/KEY_TIME.flv (default "tmp")
       --gop_num int           gop num (default 1)
       --hls_addr string       HLS server listen address (default ":7002")

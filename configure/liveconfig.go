@@ -103,7 +103,7 @@ func init() {
 	pflag.Int("read_timeout", 10, "read time out")
 	pflag.Int("write_timeout", 10, "write time out")
 	pflag.Int("gop_num", 1, "gop num")
-	pflag.Bool("dashboard", false, "Enable dashboard")
+	pflag.Bool("dashboard", false, "Enable dashboard on http://{api_addr}/dashboard")
 	pflag.Parse()
 	Config.BindPFlags(pflag.CommandLine)
 
