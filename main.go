@@ -125,8 +125,6 @@ func main() {
 		}
 	}()
 
-	configure.LoadConfig()
-
 	log.Infof(`
      _     _            ____       
     | |   (_)_   _____ / ___| ___  
