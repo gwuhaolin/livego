@@ -37,12 +37,12 @@
 
 ## 使用
 1. 启动服务：执行 `livego` 二进制文件启动 livego 服务；
-2. 访问 `http://localhost:8090/control/get?room=movie` 获取一个房间的 channelkey.
-3. 推流: 通过`RTMP`协议推送视频流到地址 `rtmp://localhost:1935/{appname}/{channelkey}` (appname默认是`live`), 例如： 使用 `ffmpeg -re -i demo.flv -c copy -f flv rtmp://localhost:1935/{appname}/{channelkey}` 推流;
+2. 访问 `http://localhost:8090/control/get?room=movie` 获取一个房间的 channelkey(channelkey用于推流，movie用于播放).
+3. 推流: 通过`RTMP`协议推送视频流到地址 `rtmp://localhost:1935/{appname}/{channelkey}` (appname默认是`live`), 例如： 使用 `ffmpeg -re -i demo.flv -c copy -f flv rtmp://localhost:1935/{appname}/{channelkey}` 推流([下载demo flv](https://s3plus.meituan.net/v1/mss_7e425c4d9dcb4bb4918bbfa2779e6de1/mpack/default/demo.flv));
 4. 播放: 支持多种播放协议，播放地址如下:
-    - `RTMP`:`rtmp://localhost:1935/{appname}/{channelkey}`
-    - `FLV`:`http://127.0.0.1:7001/{appname}/{channelkey}.flv`
-    - `HLS`:`http://127.0.0.1:7002/{appname}/{channelkey}.m3u8`
+    - `RTMP`:`rtmp://localhost:1935/{appname}/movie`
+    - `FLV`:`http://127.0.0.1:7001/{appname}/movie.flv`
+    - `HLS`:`http://127.0.0.1:7002/{appname}/movie.m3u8`
 
 所有配置项: 
 ```bash
