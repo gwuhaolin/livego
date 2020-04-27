@@ -3,6 +3,7 @@ package hls
 import (
 	"bytes"
 	"fmt"
+	"livego/configure"
 	"time"
 
 	"livego/av"
@@ -180,7 +181,7 @@ func (source *Source) cleanup() {
 
 func (source *Source) Close(err error) {
 	log.Debug("hls source closed: ", source.info)
-	if !source.closed {
+	if !source.closed && !configure.Config.GetBool("hls_keep_after_end") {
 		source.cleanup()
 	}
 	source.closed = true

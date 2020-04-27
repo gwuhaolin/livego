@@ -38,32 +38,34 @@ type JWT struct {
 	Algorithm string `mapstructure:"algorithm"`
 }
 type ServerCfg struct {
-	Level        string        `mapstructure:"level"`
-	ConfigFile   string        `mapstructure:"config_file"`
-	FLVDir       string        `mapstructure:"flv_dir"`
-	RTMPAddr     string        `mapstructure:"rtmp_addr"`
-	HTTPFLVAddr  string        `mapstructure:"httpflv_addr"`
-	HLSAddr      string        `mapstructure:"hls_addr"`
-	APIAddr      string        `mapstructure:"api_addr"`
-	RedisAddr    string        `mapstructure:"redis_addr"`
-	RedisPwd     string        `mapstructure:"redis_pwd"`
-	ReadTimeout  int           `mapstructure:"read_timeout"`
-	WriteTimeout int           `mapstructure:"write_timeout"`
-	GopNum       int           `mapstructure:"gop_num"`
-	JWT          JWT           `mapstructure:"jwt"`
-	Server       []Application `mapstructure:"server"`
+	Level           string       `mapstructure:"level"`
+	ConfigFile      string       `mapstructure:"config_file"`
+	FLVDir          string       `mapstructure:"flv_dir"`
+	RTMPAddr        string       `mapstructure:"rtmp_addr"`
+	HTTPFLVAddr     string       `mapstructure:"httpflv_addr"`
+	HLSAddr         string       `mapstructure:"hls_addr"`
+	HLSKeepAfterEnd bool         `mapstructure:"hls_keep_after_end"`
+	APIAddr         string       `mapstructure:"api_addr"`
+	RedisAddr       string       `mapstructure:"redis_addr"`
+	RedisPwd        string       `mapstructure:"redis_pwd"`
+	ReadTimeout     int          `mapstructure:"read_timeout"`
+	WriteTimeout    int          `mapstructure:"write_timeout"`
+	GopNum          int          `mapstructure:"gop_num"`
+	JWT             JWT          `mapstructure:"jwt"`
+	Server          Applications `mapstructure:"server"`
 }
 
 // default config
 var defaultConf = ServerCfg{
-	ConfigFile:   "livego.yaml",
-	RTMPAddr:     ":1935",
-	HTTPFLVAddr:  ":7001",
-	HLSAddr:      ":7002",
-	APIAddr:      ":8090",
-	WriteTimeout: 10,
-	ReadTimeout:  10,
-	GopNum:       1,
+	ConfigFile:      "livego.yaml",
+	RTMPAddr:        ":1935",
+	HTTPFLVAddr:     ":7001",
+	HLSAddr:         ":7002",
+	HLSKeepAfterEnd: false,
+	APIAddr:         ":8090",
+	WriteTimeout:    10,
+	ReadTimeout:     10,
+	GopNum:          1,
 	Server: Applications{{
 		Appname:    "live",
 		Live:       true,
