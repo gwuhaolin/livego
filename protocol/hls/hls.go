@@ -144,7 +144,7 @@ func (server *Server) handle(w http.ResponseWriter, r *http.Request) {
 
 func (server *Server) parseM3u8(pathstr string) (key string, err error) {
 	pathstr = strings.TrimLeft(pathstr, "/")
-	key = strings.TrimRight(pathstr, path.Ext(pathstr))
+	key = strings.Split(pathstr, path.Ext(pathstr))[0]
 	return
 }
 
