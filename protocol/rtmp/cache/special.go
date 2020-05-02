@@ -3,8 +3,8 @@ package cache
 import (
 	"bytes"
 
-	"livego/av"
-	"livego/protocol/amf"
+	"github.com/gwuhaolin/livego/av"
+	"github.com/gwuhaolin/livego/protocol/amf"
 
 	log "github.com/sirupsen/logrus"
 )

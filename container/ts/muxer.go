@@ -3,7 +3,7 @@ package ts
 import (
 	"io"
 
-	"livego/av"
+	"github.com/gwuhaolin/livego/av"
 )
 
 const (

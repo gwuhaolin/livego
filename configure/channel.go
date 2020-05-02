@@ -3,7 +3,7 @@ package configure
 import (
 	"fmt"
 
-	"livego/utils/uid"
+	"github.com/gwuhaolin/livego/utils/uid"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/patrickmn/go-cache"

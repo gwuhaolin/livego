@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"livego/av"
-	"livego/protocol/rtmp"
+	"github.com/gwuhaolin/livego/av"
+	"github.com/gwuhaolin/livego/protocol/rtmp"
 
 	log "github.com/sirupsen/logrus"
 )
