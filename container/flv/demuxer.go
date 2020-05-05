@@ -2,7 +2,7 @@ package flv
 
 import (
 	"fmt"
-	"livego/av"
+	"github.com/gwuhaolin/livego/av"
 )
 
 var (

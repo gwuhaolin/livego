@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"livego/av"
-	"livego/protocol/rtmp/cache"
-	"livego/protocol/rtmp/rtmprelay"
+	"github.com/gwuhaolin/livego/av"
+	"github.com/gwuhaolin/livego/protocol/rtmp/cache"
+	"github.com/gwuhaolin/livego/protocol/rtmp/rtmprelay"
 
 	cmap "github.com/orcaman/concurrent-map"
 	log "github.com/sirupsen/logrus"

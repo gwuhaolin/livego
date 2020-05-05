@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"livego/utils/pool"
+	"github.com/gwuhaolin/livego/utils/pool"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"livego/av"
-	"livego/configure"
-	"livego/protocol/amf"
-	"livego/utils/pio"
-	"livego/utils/uid"
+	"github.com/gwuhaolin/livego/av"
+	"github.com/gwuhaolin/livego/configure"
+	"github.com/gwuhaolin/livego/protocol/amf"
+	"github.com/gwuhaolin/livego/utils/pio"
+	"github.com/gwuhaolin/livego/utils/uid"
 
 	log "github.com/sirupsen/logrus"
 )

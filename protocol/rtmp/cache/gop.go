@@ -3,7 +3,7 @@ package cache
 import (
 	"fmt"
 
-	"livego/av"
+	"github.com/gwuhaolin/livego/av"
 )
 
 var (
