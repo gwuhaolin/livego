@@ -9,8 +9,8 @@
 
 Simple and efficient live broadcast server:
 - Very simple to install and use;
-- Pure Golang, high performance, cross-platform;
-- Support commonly used transmission protocols, file formats, encoding formats;
+- Pure Golang, high performance, and cross-platform;
+- Supports commonly used transmission protocols, file formats, and encoding formats;
 
 #### Supported transport protocols
 - RTMP
