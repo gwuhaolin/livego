@@ -122,7 +122,7 @@ func (chunkStream *ChunkStream) writeChunk(w *ReadWriter, chunkSize int) error {
 
 func (chunkStream *ChunkStream) readChunk(r *ReadWriter, chunkSize uint32, pool *pool.Pool) error {
 	if chunkStream.remain != 0 && chunkStream.tmpFromat != 3 {
-		return fmt.Errorf("inlaid remin = %d", chunkStream.remain)
+		return fmt.Errorf("invalid remain = %d", chunkStream.remain)
 	}
 	switch chunkStream.CSID {
 	case 0:
