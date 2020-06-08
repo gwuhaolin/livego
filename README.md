@@ -55,11 +55,11 @@ Usage of ./livego:
       --flv_dir string        output flv file at flvDir/APP/KEY_TIME.flv (default "tmp")
       --gop_num int           gop num (default 1)
       --hls_addr string       HLS server listen address (default ":7002")
+      --hls_keep_after_end    Maintains the HLS after the stream ends
       --httpflv_addr string   HTTP-FLV server listen address (default ":7001")
       --level string          Log level (default "info")
       --read_timeout int      read time out (default 10)
-      --rtmp_addr string      RTMP server listen address (default ":1935")
-      --write_timeout int     write time out (default 10)
+      --rtmp_addr string      RTMP server listen address
 ```
 
 ### [Use with flv.js](https://github.com/gwuhaolin/blog/issues/3)

@@ -53,6 +53,7 @@ Usage of ./livego:
       --flv_dir string        输出的 flv 文件路径 flvDir/APP/KEY_TIME.flv (默认 "tmp")
       --gop_num int           gop 数量 (default 1)
       --hls_addr string       HLS 服务监听地址 (默认 ":7002")
+      --hls_keep_after_end    Maintains the HLS after the stream ends
       --httpflv_addr string   HTTP-FLV server listen address (默认 ":7001")
       --level string          日志等级 (默认 "info")
       --read_timeout int      读超时时间 (默认 10)
