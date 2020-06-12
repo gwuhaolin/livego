@@ -3,10 +3,10 @@ package core
 import (
 	"bytes"
 	"fmt"
-	"io"
-
 	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/protocol/amf"
+	"io"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -119,13 +119,13 @@ func (connServer *ConnServer) connect(vs []interface{}) error {
 		case amf.Object:
 			obimap := v.(amf.Object)
 			if app, ok := obimap["app"]; ok {
-				connServer.ConnInfo.App = app.(string)
+				connServer.ConnInfo.App = strings.Replace(app.(string), "/", "", 1)
 			}
 			if flashVer, ok := obimap["flashVer"]; ok {
 				connServer.ConnInfo.Flashver = flashVer.(string)
 			}
 			if tcurl, ok := obimap["tcUrl"]; ok {
-				connServer.ConnInfo.TcUrl = tcurl.(string)
+				connServer.ConnInfo.TcUrl = strings.Replace(tcurl.(string), connServer.ConnInfo.App+"/", connServer.ConnInfo.App, 1)
 			}
 			if encoding, ok := obimap["objectEncoding"]; ok {
 				connServer.ConnInfo.ObjectEncoding = int(encoding.(float64))
