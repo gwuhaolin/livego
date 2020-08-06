@@ -3,6 +3,7 @@ package rtmprelay
 import (
 	"bytes"
 	"fmt"
+	"github.com/gwuhaolin/livego/av"
 	"io"
 
 	"github.com/gwuhaolin/livego/protocol/amf"
@@ -92,14 +93,14 @@ func (self *RtmpRelay) Start() error {
 	self.connectPublishClient = core.NewConnClient()
 
 	log.Debugf("play server addr:%v starting....", self.PlayUrl)
-	err := self.connectPlayClient.Start(self.PlayUrl, "play")
+	err := self.connectPlayClient.Start(self.PlayUrl, av.PLAY)
 	if err != nil {
 		log.Debugf("connectPlayClient.Start url=%v error", self.PlayUrl)
 		return err
 	}
 
 	log.Debugf("publish server addr:%v starting....", self.PublishUrl)
-	err = self.connectPublishClient.Start(self.PublishUrl, "publish")
+	err = self.connectPublishClient.Start(self.PublishUrl, av.PUBLISH)
 	if err != nil {
 		log.Debugf("connectPublishClient.Start url=%v error", self.PublishUrl)
 		self.connectPlayClient.Close(nil)
