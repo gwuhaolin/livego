@@ -86,7 +86,7 @@ func (self *RtmpRelay) sendPublishChunkStream() {
 
 func (self *RtmpRelay) Start() error {
 	if self.startflag {
-		return fmt.Errorf("The rtmprelay already started, playurl=%s, publishurl=%s", self.PlayUrl, self.PublishUrl)
+		return fmt.Errorf("The rtmprelay already started, playurl=%s, publishurl=%s\n", self.PlayUrl, self.PublishUrl)
 	}
 
 	self.connectPlayClient = core.NewConnClient()
