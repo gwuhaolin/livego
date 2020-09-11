@@ -77,7 +77,7 @@ func (self *RtmpRelay) sendPublishChunkStream() {
 			if ctrlcmd == STOP_CTRL {
 				self.connectPublishClient.Close(nil)
 				log.Debugf("sendPublishChunkStream close: playurl=%s, publishurl=%s", self.PlayUrl, self.PublishUrl)
-				break
+				return
 			}
 		}
 	}

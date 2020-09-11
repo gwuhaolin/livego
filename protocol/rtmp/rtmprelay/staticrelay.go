@@ -170,7 +170,7 @@ func (self *StaticPush) HandleAvPacket() {
 			if ctrlcmd == STATIC_RELAY_STOP_CTRL {
 				self.connectClient.Close(nil)
 				log.Debugf("Static HandleAvPacket close: publishurl=%s", self.RtmpUrl)
-				break
+				return
 			}
 		}
 	}
