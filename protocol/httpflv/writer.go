@@ -154,8 +154,6 @@ func (flvWriter *FLVWriter) SendPacket() error {
 		}
 
 	}
-
-	return nil
 }
 
 func (flvWriter *FLVWriter) Wait() {
