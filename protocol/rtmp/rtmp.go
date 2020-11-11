@@ -329,7 +329,6 @@ func (v *VirWriter) SendPacket() error {
 		}
 
 	}
-	return nil
 }
 
 func (v *VirWriter) Info() (ret av.Info) {
