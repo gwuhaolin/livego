@@ -21,19 +21,28 @@ type StaticPush struct {
 
 var G_StaticPushMap = make(map[string](*StaticPush))
 var g_MapLock = new(sync.RWMutex)
+var G_PushUrlList []string = nil
 
 var (
 	STATIC_RELAY_STOP_CTRL = "STATIC_RTMPRELAY_STOP"
 )
 
 func GetStaticPushList(appname string) ([]string, error) {
-	pushurlList, ok := configure.GetStaticPushUrlList(appname)
+	if G_PushUrlList == nil {
+		// Do not unmarshel the config every time, lots of reflect works -gs
+		pushurlList, ok := configure.GetStaticPushUrlList(appname)
+		if !ok {
+			G_PushUrlList = []string{}
+		} else {
+			G_PushUrlList = pushurlList
+		}
+	}
 
-	if !ok {
+	if len(G_PushUrlList) == 0 {
 		return nil, fmt.Errorf("no static push url")
 	}
 
-	return pushurlList, nil
+	return G_PushUrlList, nil
 }
 
 func GetAndCreateStaticPushObject(rtmpurl string) *StaticPush {
