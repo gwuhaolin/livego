@@ -143,6 +143,7 @@ func (s *Server) handleConn(conn *core.Conn) error {
 			writer := s.getter.GetWriter(reader.Info())
 			s.handler.HandleWriter(writer)
 		}
+		//FIXME: should flv should be configurable, not always on -gs
 		flvWriter := new(flv.FlvDvr)
 		s.handler.HandleWriter(flvWriter.GetWriter(reader.Info()))
 	} else {
