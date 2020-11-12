@@ -160,36 +160,40 @@ func (server *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 	}
 
 	msgs := new(streams)
-	for item := range rtmpStream.GetStreams().IterBuffered() {
-		if s, ok := item.Val.(*rtmp.Stream); ok {
+
+	rtmpStream.GetStreams().Range(func(key, val interface{}) bool {
+		if s, ok := val.(*rtmp.Stream); ok {
 			if s.GetReader() != nil {
 				switch s.GetReader().(type) {
 				case *rtmp.VirReader:
 					v := s.GetReader().(*rtmp.VirReader)
-					msg := stream{item.Key, v.Info().URL, v.ReadBWInfo.StreamId, v.ReadBWInfo.VideoDatainBytes, v.ReadBWInfo.VideoSpeedInBytesperMS,
+					msg := stream{key.(string), v.Info().URL, v.ReadBWInfo.StreamId, v.ReadBWInfo.VideoDatainBytes, v.ReadBWInfo.VideoSpeedInBytesperMS,
 						v.ReadBWInfo.AudioDatainBytes, v.ReadBWInfo.AudioSpeedInBytesperMS}
 					msgs.Publishers = append(msgs.Publishers, msg)
 				}
 			}
 		}
-	}
+		return true
+	})
 
-	for item := range rtmpStream.GetStreams().IterBuffered() {
-		ws := item.Val.(*rtmp.Stream).GetWs()
-		for s := range ws.IterBuffered() {
-			if pw, ok := s.Val.(*rtmp.PackWriterCloser); ok {
+	rtmpStream.GetStreams().Range(func(key, val interface{}) bool {
+		ws := val.(*rtmp.Stream).GetWs()
+		ws.Range(func(k, v interface{}) bool {
+			if pw, ok := v.(*rtmp.PackWriterCloser); ok {
 				if pw.GetWriter() != nil {
 					switch pw.GetWriter().(type) {
 					case *rtmp.VirWriter:
 						v := pw.GetWriter().(*rtmp.VirWriter)
-						msg := stream{item.Key, v.Info().URL, v.WriteBWInfo.StreamId, v.WriteBWInfo.VideoDatainBytes, v.WriteBWInfo.VideoSpeedInBytesperMS,
+						msg := stream{key.(string), v.Info().URL, v.WriteBWInfo.StreamId, v.WriteBWInfo.VideoDatainBytes, v.WriteBWInfo.VideoSpeedInBytesperMS,
 							v.WriteBWInfo.AudioDatainBytes, v.WriteBWInfo.AudioSpeedInBytesperMS}
 						msgs.Players = append(msgs.Players, msg)
 					}
 				}
 			}
-		}
-	}
+			return true
+		})
+		return true
+	})
 
 	resp, _ := json.Marshal(msgs)
 	res.Data = resp

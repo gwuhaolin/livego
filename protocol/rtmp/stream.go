@@ -3,13 +3,13 @@ package rtmp
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/protocol/rtmp/cache"
 	"github.com/gwuhaolin/livego/protocol/rtmp/rtmprelay"
 
-	cmap "github.com/orcaman/concurrent-map"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -18,12 +18,12 @@ var (
 )
 
 type RtmpStream struct {
-	streams cmap.ConcurrentMap //key
+	streams *sync.Map //key
 }
 
 func NewRtmpStream() *RtmpStream {
 	ret := &RtmpStream{
-		streams: cmap.New(),
+		streams: &sync.Map{},
 	}
 	go ret.CheckAlive()
 	return ret
@@ -34,7 +34,7 @@ func (rs *RtmpStream) HandleReader(r av.ReadCloser) {
 	log.Debugf("HandleReader: info[%v]", info)
 
 	var stream *Stream
-	i, ok := rs.streams.Get(info.Key)
+	i, ok := rs.streams.Load(info.Key)
 	if stream, ok = i.(*Stream); ok {
 		stream.TransStop()
 		id := stream.ID()
@@ -42,11 +42,11 @@ func (rs *RtmpStream) HandleReader(r av.ReadCloser) {
 			ns := NewStream()
 			stream.Copy(ns)
 			stream = ns
-			rs.streams.Set(info.Key, ns)
+			rs.streams.Store(info.Key, ns)
 		}
 	} else {
 		stream = NewStream()
-		rs.streams.Set(info.Key, stream)
+		rs.streams.Store(info.Key, stream)
 		stream.info = info
 	}
 
@@ -58,33 +58,32 @@ func (rs *RtmpStream) HandleWriter(w av.WriteCloser) {
 	log.Debugf("HandleWriter: info[%v]", info)
 
 	var s *Stream
-	ok := rs.streams.Has(info.Key)
+	item, ok := rs.streams.Load(info.Key)
 	if !ok {
+		log.Debugf("HandleWriter: not found create new info[%v]", info)
 		s = NewStream()
-		rs.streams.Set(info.Key, s)
+		rs.streams.Store(info.Key, s)
 		s.info = info
 	} else {
-		item, ok := rs.streams.Get(info.Key)
-		if ok {
-			s = item.(*Stream)
-			s.AddWriter(w)
-		}
+		s = item.(*Stream)
+		s.AddWriter(w)
 	}
 }
 
-func (rs *RtmpStream) GetStreams() cmap.ConcurrentMap {
+func (rs *RtmpStream) GetStreams() *sync.Map {
 	return rs.streams
 }
 
 func (rs *RtmpStream) CheckAlive() {
 	for {
 		<-time.After(5 * time.Second)
-		for item := range rs.streams.IterBuffered() {
-			v := item.Val.(*Stream)
+		rs.streams.Range(func(key, val interface{}) bool {
+			v := val.(*Stream)
 			if v.CheckAlive() == 0 {
-				rs.streams.Remove(item.Key)
+				rs.streams.Delete(key)
 			}
-		}
+			return true
+		})
 	}
 }
 
@@ -92,7 +91,7 @@ type Stream struct {
 	isStart bool
 	cache   *cache.Cache
 	r       av.ReadCloser
-	ws      cmap.ConcurrentMap
+	ws      *sync.Map
 	info    av.Info
 }
 
@@ -108,7 +107,7 @@ func (p *PackWriterCloser) GetWriter() av.WriteCloser {
 func NewStream() *Stream {
 	return &Stream{
 		cache: cache.NewCache(),
-		ws:    cmap.New(),
+		ws:    &sync.Map{},
 	}
 }
 
@@ -123,17 +122,19 @@ func (s *Stream) GetReader() av.ReadCloser {
 	return s.r
 }
 
-func (s *Stream) GetWs() cmap.ConcurrentMap {
+func (s *Stream) GetWs() *sync.Map {
 	return s.ws
 }
 
 func (s *Stream) Copy(dst *Stream) {
-	for item := range s.ws.IterBuffered() {
-		v := item.Val.(*PackWriterCloser)
-		s.ws.Remove(item.Key)
+	dst.info = s.info
+	s.ws.Range(func(key, val interface{}) bool {
+		v := val.(*PackWriterCloser)
+		s.ws.Delete(key)
 		v.w.CalcBaseTimestamp()
 		dst.AddWriter(v.w)
-	}
+		return true
+	})
 }
 
 func (s *Stream) AddReader(r av.ReadCloser) {
@@ -144,7 +145,7 @@ func (s *Stream) AddReader(r av.ReadCloser) {
 func (s *Stream) AddWriter(w av.WriteCloser) {
 	info := w.Info()
 	pw := &PackWriterCloser{w: w}
-	s.ws.Set(info.UID, pw)
+	s.ws.Store(info.UID, pw)
 }
 
 /*检测本application下是否配置static_push,
@@ -331,26 +332,27 @@ func (s *Stream) TransStart() {
 
 		s.cache.Write(p)
 
-		for item := range s.ws.IterBuffered() {
-			v := item.Val.(*PackWriterCloser)
+		s.ws.Range(func(key, val interface{}) bool {
+			v := val.(*PackWriterCloser)
 			if !v.init {
 				//log.Debugf("cache.send: %v", v.w.Info())
 				if err = s.cache.Send(v.w); err != nil {
 					log.Debugf("[%s] send cache packet error: %v, remove", v.w.Info(), err)
-					s.ws.Remove(item.Key)
-					continue
+					s.ws.Delete(key)
+					return true
 				}
 				v.init = true
 			} else {
-				new_packet := p
+				newPacket := p
 				//writeType := reflect.TypeOf(v.w)
 				//log.Debugf("w.Write: type=%v, %v", writeType, v.w.Info())
-				if err = v.w.Write(&new_packet); err != nil {
+				if err = v.w.Write(&newPacket); err != nil {
 					log.Debugf("[%s] write packet error: %v, remove", v.w.Info(), err)
-					s.ws.Remove(item.Key)
+					s.ws.Delete(key)
 				}
 			}
-		}
+			return true
+		})
 	}
 }
 
@@ -372,18 +374,22 @@ func (s *Stream) CheckAlive() (n int) {
 			s.r.Close(fmt.Errorf("read timeout"))
 		}
 	}
-	for item := range s.ws.IterBuffered() {
-		v := item.Val.(*PackWriterCloser)
+
+	s.ws.Range(func(key, val interface{}) bool {
+		v := val.(*PackWriterCloser)
 		if v.w != nil {
+			//Alive from RWBaser, check last frame now - timestamp, if > timeout then Remove it
 			if !v.w.Alive() && s.isStart {
-				s.ws.Remove(item.Key)
+				log.Infof("write timeout remove")
+				s.ws.Delete(key)
 				v.w.Close(fmt.Errorf("write timeout"))
-				continue
+				return true
 			}
 			n++
 		}
+		return true
+	})
 
-	}
 	return
 }
 
@@ -393,14 +399,15 @@ func (s *Stream) closeInter() {
 		log.Debugf("[%v] publisher closed", s.r.Info())
 	}
 
-	for item := range s.ws.IterBuffered() {
-		v := item.Val.(*PackWriterCloser)
+	s.ws.Range(func(key, val interface{}) bool {
+		v := val.(*PackWriterCloser)
 		if v.w != nil {
 			if v.w.Info().IsInterval() {
 				v.w.Close(fmt.Errorf("closed"))
-				s.ws.Remove(item.Key)
+				s.ws.Delete(key)
 				log.Debugf("[%v] player closed and remove\n", v.w.Info())
 			}
 		}
-	}
+		return true
+	})
 }

@@ -2,17 +2,18 @@ package hls
 
 import (
 	"fmt"
-	"github.com/gwuhaolin/livego/configure"
 	"net"
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/gwuhaolin/livego/configure"
 
 	"github.com/gwuhaolin/livego/av"
 
-	cmap "github.com/orcaman/concurrent-map"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -35,12 +36,12 @@ var crossdomainxml = []byte(`<?xml version="1.0" ?>
 
 type Server struct {
 	listener net.Listener
-	conns    cmap.ConcurrentMap
+	conns    *sync.Map
 }
 
 func NewServer() *Server {
 	ret := &Server{
-		conns: cmap.New(),
+		conns: &sync.Map{},
 	}
 	go ret.checkStop()
 	return ret
@@ -58,20 +59,19 @@ func (server *Server) Serve(listener net.Listener) error {
 
 func (server *Server) GetWriter(info av.Info) av.WriteCloser {
 	var s *Source
-	ok := server.conns.Has(info.Key)
+	v, ok := server.conns.Load(info.Key)
 	if !ok {
 		log.Debug("new hls source")
 		s = NewSource(info)
-		server.conns.Set(info.Key, s)
+		server.conns.Store(info.Key, s)
 	} else {
-		v, _ := server.conns.Get(info.Key)
 		s = v.(*Source)
 	}
 	return s
 }
 
 func (server *Server) getConn(key string) *Source {
-	v, ok := server.conns.Get(key)
+	v, ok := server.conns.Load(key)
 	if !ok {
 		return nil
 	}
@@ -81,13 +81,15 @@ func (server *Server) getConn(key string) *Source {
 func (server *Server) checkStop() {
 	for {
 		<-time.After(5 * time.Second)
-		for item := range server.conns.IterBuffered() {
-			v := item.Val.(*Source)
+
+		server.conns.Range(func(key, val interface{}) bool {
+			v := val.(*Source)
 			if !v.Alive() && !configure.Config.GetBool("hls_keep_after_end") {
 				log.Debug("check stop and remove: ", v.Info())
-				server.conns.Remove(item.Key)
+				server.conns.Delete(key)
 			}
-		}
+			return true
+		})
 	}
 }
 
