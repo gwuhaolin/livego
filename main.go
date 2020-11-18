@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
+	"net"
+	"path"
+	"runtime"
+	"time"
+
 	"github.com/gwuhaolin/livego/configure"
 	"github.com/gwuhaolin/livego/protocol/api"
 	"github.com/gwuhaolin/livego/protocol/hls"
 	"github.com/gwuhaolin/livego/protocol/httpflv"
 	"github.com/gwuhaolin/livego/protocol/rtmp"
-	"net"
-	"path"
-	"runtime"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -39,7 +40,7 @@ func startHls() *hls.Server {
 
 var rtmpAddr string
 
-func startRtmp(stream *rtmp.RtmpStream, hlsServer *hls.Server) {
+func startRtmp(stream *rtmp.StreamServer, hlsServer *hls.Server) {
 	rtmpAddr = configure.Config.GetString("rtmp_addr")
 
 	rtmpListen, err := net.Listen("tcp", rtmpAddr)
@@ -66,7 +67,7 @@ func startRtmp(stream *rtmp.RtmpStream, hlsServer *hls.Server) {
 	rtmpServer.Serve(rtmpListen)
 }
 
-func startHTTPFlv(stream *rtmp.RtmpStream) {
+func startHTTPFlv(stream *rtmp.StreamServer) {
 	httpflvAddr := configure.Config.GetString("httpflv_addr")
 
 	flvListen, err := net.Listen("tcp", httpflvAddr)
@@ -86,7 +87,7 @@ func startHTTPFlv(stream *rtmp.RtmpStream) {
 	}()
 }
 
-func startAPI(stream *rtmp.RtmpStream) {
+func startAPI(stream *rtmp.StreamServer) {
 	apiAddr := configure.Config.GetString("api_addr")
 
 	if apiAddr != "" {
@@ -134,7 +135,7 @@ func main() {
         version: %s
 	`, VERSION)
 
-	stream := rtmp.NewRtmpStream()
+	stream := rtmp.NewStreamServers()
 	hlsServer := startHls()
 	startHTTPFlv(stream)
 	startAPI(stream)

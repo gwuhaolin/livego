@@ -107,11 +107,13 @@ type GetWriter interface {
 	GetWriter(Info) WriteCloser
 }
 
+// 流读写接口
 type Handler interface {
 	HandleReader(ReadCloser)
 	HandleWriter(WriteCloser)
 }
 
+// 流状态
 type Alive interface {
 	Alive() bool
 }
@@ -125,6 +127,7 @@ type CalcTime interface {
 	CalcBaseTimestamp()
 }
 
+// 流信息
 type Info struct {
 	Key   string
 	URL   string
@@ -141,12 +144,14 @@ func (info Info) String() string {
 		info.Key, info.URL, info.UID, info.Inter)
 }
 
+// 读源流数据接口
 type ReadCloser interface {
 	Closer
 	Alive
 	Read(*Packet) error
 }
 
+// 写目标流数据接口
 type WriteCloser interface {
 	Closer
 	Alive

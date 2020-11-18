@@ -46,14 +46,14 @@ func (server *Server) Serve(l net.Listener) error {
 
 // 获取发布和播放器的信息
 func (server *Server) getStreams(w http.ResponseWriter, r *http.Request) *streams {
-	rtmpStream := server.handler.(*rtmp.RtmpStream)
+	rtmpStream := server.handler.(*rtmp.StreamServer)
 	if rtmpStream == nil {
 		return nil
 	}
 	msgs := new(streams)
 
-	rtmpStream.GetStreams().Range(func(key, val interface{}) bool {
-		if s, ok := val.(*rtmp.Stream); ok {
+	rtmpStream.GetServices().Range(func(key, val interface{}) bool {
+		if s, ok := val.(*rtmp.StreamService); ok {
 			if s.GetReader() != nil {
 				msg := stream{key.(string), s.GetReader().Info().UID}
 				msgs.Publishers = append(msgs.Publishers, msg)
@@ -62,8 +62,8 @@ func (server *Server) getStreams(w http.ResponseWriter, r *http.Request) *stream
 		return true
 	})
 
-	rtmpStream.GetStreams().Range(func(key, val interface{}) bool {
-		ws := val.(*rtmp.Stream).GetWs()
+	rtmpStream.GetServices().Range(func(key, val interface{}) bool {
+		ws := val.(*rtmp.StreamService).GetWs()
 
 		ws.Range(func(k, v interface{}) bool {
 			if pw, ok := v.(*rtmp.PackWriterCloser); ok {

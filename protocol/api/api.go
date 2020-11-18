@@ -152,7 +152,7 @@ func (server *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 
 	defer res.SendJson()
 
-	rtmpStream := server.handler.(*rtmp.RtmpStream)
+	rtmpStream := server.handler.(*rtmp.StreamServer)
 	if rtmpStream == nil {
 		res.Status = 500
 		res.Data = "Get rtmp stream information error"
@@ -161,8 +161,8 @@ func (server *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 
 	msgs := new(streams)
 
-	rtmpStream.GetStreams().Range(func(key, val interface{}) bool {
-		if s, ok := val.(*rtmp.Stream); ok {
+	rtmpStream.GetServices().Range(func(key, val interface{}) bool {
+		if s, ok := val.(*rtmp.StreamService); ok {
 			if s.GetReader() != nil {
 				switch s.GetReader().(type) {
 				case *rtmp.VirReader:
@@ -176,8 +176,8 @@ func (server *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 		return true
 	})
 
-	rtmpStream.GetStreams().Range(func(key, val interface{}) bool {
-		ws := val.(*rtmp.Stream).GetWs()
+	rtmpStream.GetServices().Range(func(key, val interface{}) bool {
+		ws := val.(*rtmp.StreamService).GetWs()
 		ws.Range(func(k, v interface{}) bool {
 			if pw, ok := v.(*rtmp.PackWriterCloser); ok {
 				if pw.GetWriter() != nil {
