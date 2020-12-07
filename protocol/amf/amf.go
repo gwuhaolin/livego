@@ -1,7 +1,6 @@
 package amf
 
 import (
-	"errors"
 	"fmt"
 	"io"
 )
@@ -26,7 +25,7 @@ func (d *Decoder) Decode(r io.Reader, ver Version) (interface{}, error) {
 		return d.DecodeAmf3(r)
 	}
 
-	return nil, errors.New(fmt.Sprintf("decode amf: unsupported version %d", ver))
+	return nil, fmt.Errorf("decode amf: unsupported version %d", ver)
 }
 
 func (e *Encoder) EncodeBatch(w io.Writer, ver Version, val ...interface{}) (int, error) {
@@ -46,5 +45,5 @@ func (e *Encoder) Encode(w io.Writer, val interface{}, ver Version) (int, error)
 		return e.EncodeAmf3(w, val)
 	}
 
-	return 0, Error("encode amf: unsupported version %d", ver)
+	return 0, fmt.Errorf("encode amf: unsupported version %d", ver)
 }

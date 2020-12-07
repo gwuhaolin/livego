@@ -166,15 +166,15 @@ func TestDecodeAmf3String(t *testing.T) {
 
 func TestDecodeAmf3Array(t *testing.T) {
 	buf := bytes.NewReader([]byte{0x09, 0x13, 0x01,
-				      0x06, 0x03, '1',
-				      0x06, 0x03, '2',
-				      0x06, 0x03, '3',
-				      0x06, 0x03, '4',
-				      0x06, 0x03, '5',
-				      0x06, 0x03, '6',
-				      0x06, 0x03, '7',
-				      0x06, 0x03, '8',
-				      0x06, 0x03, '9',
+		0x06, 0x03, '1',
+		0x06, 0x03, '2',
+		0x06, 0x03, '3',
+		0x06, 0x03, '4',
+		0x06, 0x03, '5',
+		0x06, 0x03, '6',
+		0x06, 0x03, '7',
+		0x06, 0x03, '8',
+		0x06, 0x03, '9',
 	})
 
 	dec := new(Decoder)
@@ -186,7 +186,7 @@ func TestDecodeAmf3Array(t *testing.T) {
 
 	for i, v := range expect {
 		if got[i] != v {
-			t.Error("expected array element %d to be %v, got %v", i, v, got[i])
+			t.Errorf("expected array element %d to be %v, got %v", i, v, got[i])
 		}
 	}
 }
@@ -211,10 +211,10 @@ func TestDecodeAmf3Object(t *testing.T) {
 	}
 
 	if to["foo"] != "bar" {
-		t.Error("expected foo to be bar, got: %+v", to["foo"])
+		t.Errorf("expected foo to be bar, got: %+v", to["foo"])
 	}
 
 	if to["baz"] != nil {
-		t.Error("expected baz to be nil, got: %+v", to["baz"])
+		t.Errorf("expected baz to be nil, got: %+v", to["baz"])
 	}
 }

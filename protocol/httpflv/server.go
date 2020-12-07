@@ -2,12 +2,14 @@ package httpflv
 
 import (
 	"encoding/json"
-	"github.com/gwuhaolin/livego/av"
-	"github.com/gwuhaolin/livego/protocol/rtmp"
-	"log"
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/gwuhaolin/livego/av"
+	"github.com/gwuhaolin/livego/protocol/rtmp"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Server struct {
@@ -49,26 +51,31 @@ func (server *Server) getStreams(w http.ResponseWriter, r *http.Request) *stream
 		return nil
 	}
 	msgs := new(streams)
-	for item := range rtmpStream.GetStreams().IterBuffered() {
-		if s, ok := item.Val.(*rtmp.Stream); ok {
+
+	rtmpStream.GetStreams().Range(func(key, val interface{}) bool {
+		if s, ok := val.(*rtmp.Stream); ok {
 			if s.GetReader() != nil {
-				msg := stream{item.Key, s.GetReader().Info().UID}
+				msg := stream{key.(string), s.GetReader().Info().UID}
 				msgs.Publishers = append(msgs.Publishers, msg)
 			}
 		}
-	}
+		return true
+	})
 
-	for item := range rtmpStream.GetStreams().IterBuffered() {
-		ws := item.Val.(*rtmp.Stream).GetWs()
-		for s := range ws.IterBuffered() {
-			if pw, ok := s.Val.(*rtmp.PackWriterCloser); ok {
+	rtmpStream.GetStreams().Range(func(key, val interface{}) bool {
+		ws := val.(*rtmp.Stream).GetWs()
+
+		ws.Range(func(k, v interface{}) bool {
+			if pw, ok := v.(*rtmp.PackWriterCloser); ok {
 				if pw.GetWriter() != nil {
-					msg := stream{item.Key, pw.GetWriter().Info().UID}
+					msg := stream{key.(string), pw.GetWriter().Info().UID}
 					msgs.Players = append(msgs.Players, msg)
 				}
 			}
-		}
-	}
+			return true
+		})
+		return true
+	})
 
 	return msgs
 }
@@ -86,7 +93,7 @@ func (server *Server) getStream(w http.ResponseWriter, r *http.Request) {
 func (server *Server) handleConn(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("http flv handleConn panic: ", r)
+			log.Error("http flv handleConn panic: ", r)
 		}
 	}()
 
@@ -98,7 +105,7 @@ func (server *Server) handleConn(w http.ResponseWriter, r *http.Request) {
 	}
 	path := strings.TrimSuffix(strings.TrimLeft(u, "/"), ".flv")
 	paths := strings.SplitN(path, "/", 2)
-	log.Println("url:", u, "path:", path, "paths:", paths)
+	log.Debug("url:", u, "path:", path, "paths:", paths)
 
 	if len(paths) != 2 {
 		http.Error(w, "invalid path", http.StatusBadRequest)

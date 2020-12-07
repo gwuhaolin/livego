@@ -4,12 +4,13 @@ import (
 	"encoding/binary"
 	"net"
 	"time"
-	"github.com/gwuhaolin/livego/utils/pool"
+
 	"github.com/gwuhaolin/livego/utils/pio"
+	"github.com/gwuhaolin/livego/utils/pool"
 )
 
 const (
-	_                     = iota
+	_ = iota
 	idSetChunkSize
 	idAbortMessage
 	idAck

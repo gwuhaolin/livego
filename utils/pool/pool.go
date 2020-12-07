@@ -12,7 +12,7 @@ func (pool *Pool) Get(size int) []byte {
 		pool.pos = 0
 		pool.buf = make([]byte, maxpoolsize)
 	}
-	b := pool.buf[pool.pos: pool.pos+size]
+	b := pool.buf[pool.pos : pool.pos+size]
 	pool.pos += size
 	return b
 }

@@ -1,13 +1,14 @@
 package rtmprelay
 
 import (
-	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/configure"
 	"github.com/gwuhaolin/livego/protocol/rtmp/core"
-	"log"
-	"sync"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type StaticPush struct {
@@ -20,25 +21,34 @@ type StaticPush struct {
 
 var G_StaticPushMap = make(map[string](*StaticPush))
 var g_MapLock = new(sync.RWMutex)
+var G_PushUrlList []string = nil
 
 var (
 	STATIC_RELAY_STOP_CTRL = "STATIC_RTMPRELAY_STOP"
 )
 
 func GetStaticPushList(appname string) ([]string, error) {
-	pushurlList, ok := configure.GetStaticPushUrlList(appname)
-
-	if !ok {
-		return nil, errors.New("no static push url")
+	if G_PushUrlList == nil {
+		// Do not unmarshel the config every time, lots of reflect works -gs
+		pushurlList, ok := configure.GetStaticPushUrlList(appname)
+		if !ok {
+			G_PushUrlList = []string{}
+		} else {
+			G_PushUrlList = pushurlList
+		}
 	}
 
-	return pushurlList, nil
+	if len(G_PushUrlList) == 0 {
+		return nil, fmt.Errorf("no static push url")
+	}
+
+	return G_PushUrlList, nil
 }
 
 func GetAndCreateStaticPushObject(rtmpurl string) *StaticPush {
 	g_MapLock.RLock()
 	staticpush, ok := G_StaticPushMap[rtmpurl]
-	log.Printf("GetAndCreateStaticPushObject: %s, return %v", rtmpurl, ok)
+	log.Debugf("GetAndCreateStaticPushObject: %s, return %v", rtmpurl, ok)
 	if !ok {
 		g_MapLock.RUnlock()
 		newStaticpush := NewStaticPush(rtmpurl)
@@ -62,7 +72,7 @@ func GetStaticPushObject(rtmpurl string) (*StaticPush, error) {
 	}
 	g_MapLock.RUnlock()
 
-	return nil, errors.New(fmt.Sprintf("G_StaticPushMap[%s] not exist...."))
+	return nil, fmt.Errorf("G_StaticPushMap[%s] not exist....", rtmpurl)
 }
 
 func ReleaseStaticPushObject(rtmpurl string) {
@@ -70,13 +80,13 @@ func ReleaseStaticPushObject(rtmpurl string) {
 	if _, ok := G_StaticPushMap[rtmpurl]; ok {
 		g_MapLock.RUnlock()
 
-		log.Printf("ReleaseStaticPushObject %s ok", rtmpurl)
+		log.Debugf("ReleaseStaticPushObject %s ok", rtmpurl)
 		g_MapLock.Lock()
 		delete(G_StaticPushMap, rtmpurl)
 		g_MapLock.Unlock()
 	} else {
 		g_MapLock.RUnlock()
-		log.Printf("ReleaseStaticPushObject: not find %s", rtmpurl)
+		log.Debugf("ReleaseStaticPushObject: not find %s", rtmpurl)
 	}
 }
 
@@ -92,18 +102,18 @@ func NewStaticPush(rtmpurl string) *StaticPush {
 
 func (self *StaticPush) Start() error {
 	if self.startflag {
-		return errors.New(fmt.Sprintf("StaticPush already start %s", self.RtmpUrl))
+		return fmt.Errorf("StaticPush already start %s", self.RtmpUrl)
 	}
 
 	self.connectClient = core.NewConnClient()
 
-	log.Printf("static publish server addr:%v starting....", self.RtmpUrl)
+	log.Debugf("static publish server addr:%v starting....", self.RtmpUrl)
 	err := self.connectClient.Start(self.RtmpUrl, "publish")
 	if err != nil {
-		log.Printf("connectClient.Start url=%v error", self.RtmpUrl)
+		log.Debugf("connectClient.Start url=%v error", self.RtmpUrl)
 		return err
 	}
-	log.Printf("static publish server addr:%v started, streamid=%d", self.RtmpUrl, self.connectClient.GetStreamId())
+	log.Debugf("static publish server addr:%v started, streamid=%d", self.RtmpUrl, self.connectClient.GetStreamId())
 	go self.HandleAvPacket()
 
 	self.startflag = true
@@ -115,7 +125,7 @@ func (self *StaticPush) Stop() {
 		return
 	}
 
-	log.Printf("StaticPush Stop: %s", self.RtmpUrl)
+	log.Debugf("StaticPush Stop: %s", self.RtmpUrl)
 	self.sndctrl_chan <- STATIC_RELAY_STOP_CTRL
 	self.startflag = false
 }
@@ -157,7 +167,7 @@ func (self *StaticPush) sendPacket(p *av.Packet) {
 
 func (self *StaticPush) HandleAvPacket() {
 	if !self.IsStart() {
-		log.Printf("static push %s not started", self.RtmpUrl)
+		log.Debugf("static push %s not started", self.RtmpUrl)
 		return
 	}
 
@@ -168,8 +178,8 @@ func (self *StaticPush) HandleAvPacket() {
 		case ctrlcmd := <-self.sndctrl_chan:
 			if ctrlcmd == STATIC_RELAY_STOP_CTRL {
 				self.connectClient.Close(nil)
-				log.Printf("Static HandleAvPacket close: publishurl=%s", self.RtmpUrl)
-				break
+				log.Debugf("Static HandleAvPacket close: publishurl=%s", self.RtmpUrl)
+				return
 			}
 		}
 	}

@@ -2,6 +2,7 @@ package queue
 
 import (
 	"sync"
+
 	"github.com/gwuhaolin/livego/av"
 )
 

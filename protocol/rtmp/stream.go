@@ -1,14 +1,16 @@
 package rtmp
 
 import (
-	"errors"
+	"fmt"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/protocol/rtmp/cache"
 	"github.com/gwuhaolin/livego/protocol/rtmp/rtmprelay"
-	"github.com/orcaman/concurrent-map"
-	"log"
-	"strings"
-	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -16,12 +18,12 @@ var (
 )
 
 type RtmpStream struct {
-	streams cmap.ConcurrentMap //key
+	streams *sync.Map //key
 }
 
 func NewRtmpStream() *RtmpStream {
 	ret := &RtmpStream{
-		streams: cmap.New(),
+		streams: &sync.Map{},
 	}
 	go ret.CheckAlive()
 	return ret
@@ -29,10 +31,10 @@ func NewRtmpStream() *RtmpStream {
 
 func (rs *RtmpStream) HandleReader(r av.ReadCloser) {
 	info := r.Info()
-	log.Printf("HandleReader: info[%v]", info)
+	log.Debugf("HandleReader: info[%v]", info)
 
 	var stream *Stream
-	i, ok := rs.streams.Get(info.Key)
+	i, ok := rs.streams.Load(info.Key)
 	if stream, ok = i.(*Stream); ok {
 		stream.TransStop()
 		id := stream.ID()
@@ -40,11 +42,11 @@ func (rs *RtmpStream) HandleReader(r av.ReadCloser) {
 			ns := NewStream()
 			stream.Copy(ns)
 			stream = ns
-			rs.streams.Set(info.Key, ns)
+			rs.streams.Store(info.Key, ns)
 		}
 	} else {
 		stream = NewStream()
-		rs.streams.Set(info.Key, stream)
+		rs.streams.Store(info.Key, stream)
 		stream.info = info
 	}
 
@@ -53,36 +55,35 @@ func (rs *RtmpStream) HandleReader(r av.ReadCloser) {
 
 func (rs *RtmpStream) HandleWriter(w av.WriteCloser) {
 	info := w.Info()
-	log.Printf("HandleWriter: info[%v]", info)
+	log.Debugf("HandleWriter: info[%v]", info)
 
 	var s *Stream
-	ok := rs.streams.Has(info.Key)
+	item, ok := rs.streams.Load(info.Key)
 	if !ok {
+		log.Debugf("HandleWriter: not found create new info[%v]", info)
 		s = NewStream()
-		rs.streams.Set(info.Key, s)
+		rs.streams.Store(info.Key, s)
 		s.info = info
 	} else {
-		item, ok := rs.streams.Get(info.Key)
-		if ok {
-			s = item.(*Stream)
-			s.AddWriter(w)
-		}
+		s = item.(*Stream)
+		s.AddWriter(w)
 	}
 }
 
-func (rs *RtmpStream) GetStreams() cmap.ConcurrentMap {
+func (rs *RtmpStream) GetStreams() *sync.Map {
 	return rs.streams
 }
 
 func (rs *RtmpStream) CheckAlive() {
 	for {
 		<-time.After(5 * time.Second)
-		for item := range rs.streams.IterBuffered() {
-			v := item.Val.(*Stream)
+		rs.streams.Range(func(key, val interface{}) bool {
+			v := val.(*Stream)
 			if v.CheckAlive() == 0 {
-				rs.streams.Remove(item.Key)
+				rs.streams.Delete(key)
 			}
-		}
+			return true
+		})
 	}
 }
 
@@ -90,7 +91,7 @@ type Stream struct {
 	isStart bool
 	cache   *cache.Cache
 	r       av.ReadCloser
-	ws      cmap.ConcurrentMap
+	ws      *sync.Map
 	info    av.Info
 }
 
@@ -106,7 +107,7 @@ func (p *PackWriterCloser) GetWriter() av.WriteCloser {
 func NewStream() *Stream {
 	return &Stream{
 		cache: cache.NewCache(),
-		ws:    cmap.New(),
+		ws:    &sync.Map{},
 	}
 }
 
@@ -121,17 +122,19 @@ func (s *Stream) GetReader() av.ReadCloser {
 	return s.r
 }
 
-func (s *Stream) GetWs() cmap.ConcurrentMap {
+func (s *Stream) GetWs() *sync.Map {
 	return s.ws
 }
 
 func (s *Stream) Copy(dst *Stream) {
-	for item := range s.ws.IterBuffered() {
-		v := item.Val.(*PackWriterCloser)
-		s.ws.Remove(item.Key)
+	dst.info = s.info
+	s.ws.Range(func(key, val interface{}) bool {
+		v := val.(*PackWriterCloser)
+		s.ws.Delete(key)
 		v.w.CalcBaseTimestamp()
 		dst.AddWriter(v.w)
-	}
+		return true
+	})
 }
 
 func (s *Stream) AddReader(r av.ReadCloser) {
@@ -142,7 +145,7 @@ func (s *Stream) AddReader(r av.ReadCloser) {
 func (s *Stream) AddWriter(w av.WriteCloser) {
 	info := w.Info()
 	pw := &PackWriterCloser{w: w}
-	s.ws.Set(info.UID, pw)
+	s.ws.Store(info.UID, pw)
 }
 
 /*检测本application下是否配置static_push,
@@ -163,26 +166,26 @@ func (s *Stream) StartStaticPush() {
 	streamname := key[index+1:]
 	appname := dscr[0]
 
-	log.Printf("StartStaticPush: current streamname=%s， appname=%s", streamname, appname)
+	log.Debugf("StartStaticPush: current streamname=%s， appname=%s", streamname, appname)
 	pushurllist, err := rtmprelay.GetStaticPushList(appname)
 	if err != nil || len(pushurllist) < 1 {
-		log.Printf("StartStaticPush: GetStaticPushList error=%v", err)
+		log.Debugf("StartStaticPush: GetStaticPushList error=%v", err)
 		return
 	}
 
 	for _, pushurl := range pushurllist {
 		pushurl := pushurl + "/" + streamname
-		log.Printf("StartStaticPush: static pushurl=%s", pushurl)
+		log.Debugf("StartStaticPush: static pushurl=%s", pushurl)
 
 		staticpushObj := rtmprelay.GetAndCreateStaticPushObject(pushurl)
 		if staticpushObj != nil {
 			if err := staticpushObj.Start(); err != nil {
-				log.Printf("StartStaticPush: staticpushObj.Start %s error=%v", pushurl, err)
+				log.Debugf("StartStaticPush: staticpushObj.Start %s error=%v", pushurl, err)
 			} else {
-				log.Printf("StartStaticPush: staticpushObj.Start %s ok", pushurl)
+				log.Debugf("StartStaticPush: staticpushObj.Start %s ok", pushurl)
 			}
 		} else {
-			log.Printf("StartStaticPush GetStaticPushObject %s error", pushurl)
+			log.Debugf("StartStaticPush GetStaticPushObject %s error", pushurl)
 		}
 	}
 }
@@ -190,7 +193,7 @@ func (s *Stream) StartStaticPush() {
 func (s *Stream) StopStaticPush() {
 	key := s.info.Key
 
-	log.Printf("StopStaticPush......%s", key)
+	log.Debugf("StopStaticPush......%s", key)
 	dscr := strings.Split(key, "/")
 	if len(dscr) < 1 {
 		return
@@ -204,24 +207,24 @@ func (s *Stream) StopStaticPush() {
 	streamname := key[index+1:]
 	appname := dscr[0]
 
-	log.Printf("StopStaticPush: current streamname=%s， appname=%s", streamname, appname)
+	log.Debugf("StopStaticPush: current streamname=%s， appname=%s", streamname, appname)
 	pushurllist, err := rtmprelay.GetStaticPushList(appname)
 	if err != nil || len(pushurllist) < 1 {
-		log.Printf("StopStaticPush: GetStaticPushList error=%v", err)
+		log.Debugf("StopStaticPush: GetStaticPushList error=%v", err)
 		return
 	}
 
 	for _, pushurl := range pushurllist {
 		pushurl := pushurl + "/" + streamname
-		log.Printf("StopStaticPush: static pushurl=%s", pushurl)
+		log.Debugf("StopStaticPush: static pushurl=%s", pushurl)
 
 		staticpushObj, err := rtmprelay.GetStaticPushObject(pushurl)
 		if (staticpushObj != nil) && (err == nil) {
 			staticpushObj.Stop()
 			rtmprelay.ReleaseStaticPushObject(pushurl)
-			log.Printf("StopStaticPush: staticpushObj.Stop %s ", pushurl)
+			log.Debugf("StopStaticPush: staticpushObj.Stop %s ", pushurl)
 		} else {
-			log.Printf("StopStaticPush GetStaticPushObject %s error", pushurl)
+			log.Debugf("StopStaticPush GetStaticPushObject %s error", pushurl)
 		}
 	}
 }
@@ -236,10 +239,10 @@ func (s *Stream) IsSendStaticPush() bool {
 
 	appname := dscr[0]
 
-	//log.Printf("SendStaticPush: current streamname=%s， appname=%s", streamname, appname)
+	//log.Debugf("SendStaticPush: current streamname=%s， appname=%s", streamname, appname)
 	pushurllist, err := rtmprelay.GetStaticPushList(appname)
 	if err != nil || len(pushurllist) < 1 {
-		//log.Printf("SendStaticPush: GetStaticPushList error=%v", err)
+		//log.Debugf("SendStaticPush: GetStaticPushList error=%v", err)
 		return false
 	}
 
@@ -252,15 +255,15 @@ func (s *Stream) IsSendStaticPush() bool {
 
 	for _, pushurl := range pushurllist {
 		pushurl := pushurl + "/" + streamname
-		//log.Printf("SendStaticPush: static pushurl=%s", pushurl)
+		//log.Debugf("SendStaticPush: static pushurl=%s", pushurl)
 
 		staticpushObj, err := rtmprelay.GetStaticPushObject(pushurl)
 		if (staticpushObj != nil) && (err == nil) {
 			return true
 			//staticpushObj.WriteAvPacket(&packet)
-			//log.Printf("SendStaticPush: WriteAvPacket %s ", pushurl)
+			//log.Debugf("SendStaticPush: WriteAvPacket %s ", pushurl)
 		} else {
-			log.Printf("SendStaticPush GetStaticPushObject %s error", pushurl)
+			log.Debugf("SendStaticPush GetStaticPushObject %s error", pushurl)
 		}
 	}
 	return false
@@ -282,23 +285,23 @@ func (s *Stream) SendStaticPush(packet av.Packet) {
 	streamname := key[index+1:]
 	appname := dscr[0]
 
-	//log.Printf("SendStaticPush: current streamname=%s， appname=%s", streamname, appname)
+	//log.Debugf("SendStaticPush: current streamname=%s， appname=%s", streamname, appname)
 	pushurllist, err := rtmprelay.GetStaticPushList(appname)
 	if err != nil || len(pushurllist) < 1 {
-		//log.Printf("SendStaticPush: GetStaticPushList error=%v", err)
+		//log.Debugf("SendStaticPush: GetStaticPushList error=%v", err)
 		return
 	}
 
 	for _, pushurl := range pushurllist {
 		pushurl := pushurl + "/" + streamname
-		//log.Printf("SendStaticPush: static pushurl=%s", pushurl)
+		//log.Debugf("SendStaticPush: static pushurl=%s", pushurl)
 
 		staticpushObj, err := rtmprelay.GetStaticPushObject(pushurl)
 		if (staticpushObj != nil) && (err == nil) {
 			staticpushObj.WriteAvPacket(&packet)
-			//log.Printf("SendStaticPush: WriteAvPacket %s ", pushurl)
+			//log.Debugf("SendStaticPush: WriteAvPacket %s ", pushurl)
 		} else {
-			log.Printf("SendStaticPush GetStaticPushObject %s error", pushurl)
+			log.Debugf("SendStaticPush GetStaticPushObject %s error", pushurl)
 		}
 	}
 }
@@ -307,7 +310,7 @@ func (s *Stream) TransStart() {
 	s.isStart = true
 	var p av.Packet
 
-	log.Printf("TransStart:%v", s.info)
+	log.Debugf("TransStart: %v", s.info)
 
 	s.StartStaticPush()
 
@@ -329,34 +332,35 @@ func (s *Stream) TransStart() {
 
 		s.cache.Write(p)
 
-		for item := range s.ws.IterBuffered() {
-			v := item.Val.(*PackWriterCloser)
+		s.ws.Range(func(key, val interface{}) bool {
+			v := val.(*PackWriterCloser)
 			if !v.init {
-				//log.Printf("cache.send: %v", v.w.Info())
+				//log.Debugf("cache.send: %v", v.w.Info())
 				if err = s.cache.Send(v.w); err != nil {
-					log.Printf("[%s] send cache packet error: %v, remove", v.w.Info(), err)
-					s.ws.Remove(item.Key)
-					continue
+					log.Debugf("[%s] send cache packet error: %v, remove", v.w.Info(), err)
+					s.ws.Delete(key)
+					return true
 				}
 				v.init = true
 			} else {
-				new_packet := p
+				newPacket := p
 				//writeType := reflect.TypeOf(v.w)
-				//log.Printf("w.Write: type=%v, %v", writeType, v.w.Info())
-				if err = v.w.Write(&new_packet); err != nil {
-					log.Printf("[%s] write packet error: %v, remove", v.w.Info(), err)
-					s.ws.Remove(item.Key)
+				//log.Debugf("w.Write: type=%v, %v", writeType, v.w.Info())
+				if err = v.w.Write(&newPacket); err != nil {
+					log.Debugf("[%s] write packet error: %v, remove", v.w.Info(), err)
+					s.ws.Delete(key)
 				}
 			}
-		}
+			return true
+		})
 	}
 }
 
 func (s *Stream) TransStop() {
-	log.Printf("TransStop: %s", s.info.Key)
+	log.Debugf("TransStop: %s", s.info.Key)
 
 	if s.isStart && s.r != nil {
-		s.r.Close(errors.New("stop old"))
+		s.r.Close(fmt.Errorf("stop old"))
 	}
 
 	s.isStart = false
@@ -367,39 +371,43 @@ func (s *Stream) CheckAlive() (n int) {
 		if s.r.Alive() {
 			n++
 		} else {
-			s.r.Close(errors.New("read timeout"))
+			s.r.Close(fmt.Errorf("read timeout"))
 		}
 	}
-	for item := range s.ws.IterBuffered() {
-		v := item.Val.(*PackWriterCloser)
+
+	s.ws.Range(func(key, val interface{}) bool {
+		v := val.(*PackWriterCloser)
 		if v.w != nil {
+			//Alive from RWBaser, check last frame now - timestamp, if > timeout then Remove it
 			if !v.w.Alive() && s.isStart {
-				s.ws.Remove(item.Key)
-				v.w.Close(errors.New("write timeout"))
-				continue
+				log.Infof("write timeout remove")
+				s.ws.Delete(key)
+				v.w.Close(fmt.Errorf("write timeout"))
+				return true
 			}
 			n++
 		}
+		return true
+	})
 
-	}
 	return
 }
 
 func (s *Stream) closeInter() {
 	if s.r != nil {
 		s.StopStaticPush()
-		log.Printf("[%v] publisher closed", s.r.Info())
+		log.Debugf("[%v] publisher closed", s.r.Info())
 	}
 
-	for item := range s.ws.IterBuffered() {
-		v := item.Val.(*PackWriterCloser)
+	s.ws.Range(func(key, val interface{}) bool {
+		v := val.(*PackWriterCloser)
 		if v.w != nil {
 			if v.w.Info().IsInterval() {
-				v.w.Close(errors.New("closed"))
-				s.ws.Remove(item.Key)
-				log.Printf("[%v] player closed and remove\n", v.w.Info())
+				v.w.Close(fmt.Errorf("closed"))
+				s.ws.Delete(key)
+				log.Debugf("[%v] player closed and remove\n", v.w.Info())
 			}
 		}
-
-	}
+		return true
+	})
 }

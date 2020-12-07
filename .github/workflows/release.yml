@@ -1,0 +1,27 @@
+name: Release
+on:
+  release:
+    types: [published]
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+        id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+      - name: Get dependencies
+        run: go mod tidy
+      - name: Go release
+        uses: goreleaser/goreleaser-action@v1
+      - name: Docker release
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: gwuhaolin/livego
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}

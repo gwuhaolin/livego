@@ -1,7 +1,9 @@
 package av
 
-import "io"
-import "fmt"
+import (
+	"fmt"
+	"io"
+)
 
 const (
 	TAG_AUDIO          = 8

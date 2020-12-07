@@ -2,6 +2,7 @@ package amf
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 	"reflect"
 	"sort"
@@ -59,7 +60,7 @@ func (e *Encoder) EncodeAmf3(w io.Writer, val interface{}) (int, error) {
 	case reflect.Map:
 		obj, ok := val.(Object)
 		if ok != true {
-			return 0, Error("encode amf3: unable to create object from map")
+			return 0, fmt.Errorf("encode amf3: unable to create object from map")
 		}
 
 		to := *new(TypedObject)
@@ -76,7 +77,7 @@ func (e *Encoder) EncodeAmf3(w io.Writer, val interface{}) (int, error) {
 		return e.EncodeAmf3Object(w, to, true)
 	}
 
-	return 0, Error("encode amf3: unsupported type %s", v.Type())
+	return 0, fmt.Errorf("encode amf3: unsupported type %s", v.Type())
 }
 
 // marker: 1 byte 0x00
@@ -204,14 +205,14 @@ func (e *Encoder) EncodeAmf3Date(w io.Writer, val time.Time, encodeMarker bool) 
 	}
 
 	if err = WriteMarker(w, 0x01); err != nil {
-		return n, Error("amf3 encode: cannot encode u29 for array: %s", err)
+		return n, fmt.Errorf("amf3 encode: cannot encode u29 for array: %s", err)
 	}
 	n += 1
 
 	u64 := float64(val.Unix()) * 1000.0
 	err = binary.Write(w, binary.BigEndian, &u64)
 	if err != nil {
-		return n, Error("amf3 encode: unable to write date double: %s", err)
+		return n, fmt.Errorf("amf3 encode: unable to write date double: %s", err)
 	}
 	n += 8
 
@@ -237,20 +238,20 @@ func (e *Encoder) EncodeAmf3Array(w io.Writer, val Array, encodeMarker bool) (n 
 
 	m, err = e.encodeAmf3Uint29(w, u29)
 	if err != nil {
-		return n, Error("amf3 encode: cannot encode u29 for array: %s", err)
+		return n, fmt.Errorf("amf3 encode: cannot encode u29 for array: %s", err)
 	}
 	n += m
 
 	m, err = e.encodeAmf3Utf8(w, "")
 	if err != nil {
-		return n, Error("amf3 encode: cannot encode empty string for array: %s", err)
+		return n, fmt.Errorf("amf3 encode: cannot encode empty string for array: %s", err)
 	}
 	n += m
 
 	for _, v := range val {
 		m, err := e.EncodeAmf3(w, v)
 		if err != nil {
-			return n, Error("amf3 encode: cannot encode array element: %s", err)
+			return n, fmt.Errorf("amf3 encode: cannot encode array element: %s", err)
 		}
 		n += m
 	}
@@ -294,32 +295,32 @@ func (e *Encoder) EncodeAmf3Object(w io.Writer, val TypedObject, encodeMarker bo
 
 	m, err = e.encodeAmf3Uint29(w, u29)
 	if err != nil {
-		return n, Error("amf3 encode: cannot encode trait header for object: %s", err)
+		return n, fmt.Errorf("amf3 encode: cannot encode trait header for object: %s", err)
 	}
 	n += m
 
 	m, err = e.encodeAmf3Utf8(w, trait.Type)
 	if err != nil {
-		return n, Error("amf3 encode: cannot encode trait type for object: %s", err)
+		return n, fmt.Errorf("amf3 encode: cannot encode trait type for object: %s", err)
 	}
 	n += m
 
 	for _, prop := range trait.Properties {
 		m, err = e.encodeAmf3Utf8(w, prop)
 		if err != nil {
-			return n, Error("amf3 encode: cannot encode trait property for object: %s", err)
+			return n, fmt.Errorf("amf3 encode: cannot encode trait property for object: %s", err)
 		}
 		n += m
 	}
 
 	if trait.Externalizable {
-		return n, Error("amf3 encode: cannot encode externalizable object")
+		return n, fmt.Errorf("amf3 encode: cannot encode externalizable object")
 	}
 
 	for _, prop := range trait.Properties {
 		m, err = e.EncodeAmf3(w, val.Object[prop])
 		if err != nil {
-			return n, Error("amf3 encode: cannot encode sealed object value: %s", err)
+			return n, fmt.Errorf("amf3 encode: cannot encode sealed object value: %s", err)
 		}
 		n += m
 	}
@@ -337,20 +338,20 @@ func (e *Encoder) EncodeAmf3Object(w io.Writer, val TypedObject, encodeMarker bo
 			if foundProp != true {
 				m, err = e.encodeAmf3Utf8(w, k)
 				if err != nil {
-					return n, Error("amf3 encode: cannot encode dynamic object property key: %s", err)
+					return n, fmt.Errorf("amf3 encode: cannot encode dynamic object property key: %s", err)
 				}
 				n += m
 
 				m, err = e.EncodeAmf3(w, v)
 				if err != nil {
-					return n, Error("amf3 encode: cannot encode dynamic object value: %s", err)
+					return n, fmt.Errorf("amf3 encode: cannot encode dynamic object value: %s", err)
 				}
 				n += m
 			}
 
 			m, err = e.encodeAmf3Utf8(w, "")
 			if err != nil {
-				return n, Error("amf3 encode: cannot encode dynamic object ending marker string: %s", err)
+				return n, fmt.Errorf("amf3 encode: cannot encode dynamic object ending marker string: %s", err)
 			}
 			n += m
 		}
@@ -378,13 +379,13 @@ func (e *Encoder) EncodeAmf3ByteArray(w io.Writer, val []byte, encodeMarker bool
 
 	m, err = e.encodeAmf3Uint29(w, u29)
 	if err != nil {
-		return n, Error("amf3 encode: cannot encode u29 for bytearray: %s", err)
+		return n, fmt.Errorf("amf3 encode: cannot encode u29 for bytearray: %s", err)
 	}
 	n += m
 
 	m, err = w.Write(val)
 	if err != nil {
-		return n, Error("encode amf3: unable to encode bytearray value: %s", err)
+		return n, fmt.Errorf("encode amf3: unable to encode bytearray value: %s", err)
 	}
 	n += m
 
@@ -398,13 +399,13 @@ func (e *Encoder) encodeAmf3Utf8(w io.Writer, val string) (n int, err error) {
 	var m int
 	m, err = e.encodeAmf3Uint29(w, u29)
 	if err != nil {
-		return n, Error("amf3 encode: cannot encode u29 for string: %s", err)
+		return n, fmt.Errorf("amf3 encode: cannot encode u29 for string: %s", err)
 	}
 	n += m
 
 	m, err = w.Write([]byte(val))
 	if err != nil {
-		return n, Error("encode amf3: unable to encode string value: %s", err)
+		return n, fmt.Errorf("encode amf3: unable to encode string value: %s", err)
 	}
 	n += m
 
@@ -424,7 +425,7 @@ func (e *Encoder) encodeAmf3Uint29(w io.Writer, val uint32) (n int, err error) {
 	} else if val <= 0x1FFFFFFF {
 		n, err = w.Write([]byte{byte(val>>22 | 0x80), byte(val>>15&0x7F | 0x80), byte(val>>8&0x7F | 0x80), byte(val)})
 	} else {
-		return n, Error("amf3 encode: cannot encode u29 with value %d (out of range)", val)
+		return n, fmt.Errorf("amf3 encode: cannot encode u29 with value %d (out of range)", val)
 	}
 
 	return

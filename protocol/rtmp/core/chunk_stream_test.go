@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/gwuhaolin/livego/utils/pool"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestChunkRead1(t *testing.T) {

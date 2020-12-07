@@ -1,40 +1,67 @@
-# livego
-简单高效的直播服务器：
-- 安装和使用非常简单；
-- 纯 Golang 编写，性能高，跨平台；
-- 支持常用的传输协议、文件格式、编码格式；
+<p align='center'>
+    <img src='./logo.png' width='200px' height='80px'/>
+</p>
 
-#### 支持的传输协议
-- [x] RTMP
-- [x] AMF
-- [x] HLS
-- [x] HTTP-FLV
+[中文](./README_cn.md)
 
-#### 支持的容器格式
-- [x] FLV
-- [x] TS
+[![Test](https://github.com/gwuhaolin/livego/workflows/Test/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ATest)
+[![Release](https://github.com/gwuhaolin/livego/workflows/Release/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ARelease)
 
-#### 支持的编码格式
-- [x] H264
-- [x] AAC
-- [x] MP3
+Simple and efficient live broadcast server:
+- Very simple to install and use;
+- Pure Golang, high performance, and cross-platform;
+- Supports commonly used transmission protocols, file formats, and encoding formats;
 
-## 安装
-直接下载编译好的[二进制文件](https://github.com/gwuhaolin/livego/releases)后，在命令行中执行。
+#### Supported transport protocols
+- RTMP
+- AMF
+- HLS
+- HTTP-FLV
 
-#### 从源码编译
-1. 下载源码 `git clone https://github.com/gwuhaolin/livego.git`
-2. 去 livego 目录中 执行 `go build`
+#### Supported container formats
+- FLV
+- TS
 
-## 使用
-2. 启动服务：执行 `livego` 二进制文件启动 livego 服务；
-3. 上行推流：通过 `RTMP` 协议把视频流推送到 `rtmp://localhost:1935/live/movie`，例如使用 `ffmpeg -re -i demo.flv -c copy -f flv rtmp://localhost:1935/live/movie` 推送；
-4. 下行播放：支持以下三种播放协议，播放地址如下：
-    - `RTMP`:`rtmp://localhost:1935/live/movie`
-    - `FLV`:`http://127.0.0.1:7001/live/movie.flv`
-    - `HLS`:`http://127.0.0.1:7002/live/movie.m3u8`
+#### Supported encoding formats
+- H264
+- AAC
+- MP3
 
+## Installation
+After directly downloading the compiled [binary file](https://github.com/gwuhaolin/livego/releases), execute it on the command line.
 
-### [和 flv.js 搭配使用](https://github.com/gwuhaolin/blog/issues/3)
+#### Boot from Docker
+Run `docker run -p 1935:1935 -p 7001:7001 -p 7002:7002 -p 8090:8090 -d gwuhaolin/livego` to start
 
-对Golang感兴趣？请看[Golang 中文学习资料汇总](http://go.wuhaolin.cn/)
+#### Compile from source
+1. Download the source code `git clone https://github.com/gwuhaolin/livego.git`
+2. Go to the livego directory and execute `go build` or `make build`
+
+## Use
+1. Start the service: execute the livego binary file or `make run` to start the livego service;
+2. Get a channelkey(used for push the video stream) from `http://localhost:8090/control/get?room=movie` and copy data like your channelkey.
+3. Upstream push: Push the video stream to `rtmp://localhost:1935/{appname}/{channelkey}` through the` RTMP` protocol(default appname is `live`), for example, use `ffmpeg -re -i demo.flv -c copy -f flv rtmp://localhost:1935/{appname}/{channelkey}` push([download demo flv](https://s3plus.meituan.net/v1/mss_7e425c4d9dcb4bb4918bbfa2779e6de1/mpack/default/demo.flv));
+4. Downstream playback: The following three playback protocols are supported, and the playback address is as follows:
+    - `RTMP`:`rtmp://localhost:1935/{appname}/movie`
+    - `FLV`:`http://127.0.0.1:7001/{appname}/movie.flv`
+    - `HLS`:`http://127.0.0.1:7002/{appname}/movie.m3u8`
+   
+all options: 
+```bash
+./livego  -h
+Usage of ./livego:
+      --api_addr string       HTTP manage interface server listen address (default ":8090")
+      --config_file string    configure filename (default "livego.yaml")
+      --flv_dir string        output flv file at flvDir/APP/KEY_TIME.flv (default "tmp")
+      --gop_num int           gop num (default 1)
+      --hls_addr string       HLS server listen address (default ":7002")
+      --hls_keep_after_end    Maintains the HLS after the stream ends
+      --httpflv_addr string   HTTP-FLV server listen address (default ":7001")
+      --level string          Log level (default "info")
+      --read_timeout int      read time out (default 10)
+      --rtmp_addr string      RTMP server listen address
+```
+
+### [Use with flv.js](https://github.com/gwuhaolin/blog/issues/3)
+
+Interested in Golang? Please see [Golang Chinese Learning Materials Summary](http://go.wuhaolin.cn/)

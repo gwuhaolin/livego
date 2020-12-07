@@ -1,17 +1,20 @@
 package hls
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
-	"log"
+
+	"github.com/gwuhaolin/livego/configure"
+
 	"github.com/gwuhaolin/livego/av"
-	"github.com/orcaman/concurrent-map"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -19,10 +22,10 @@ const (
 )
 
 var (
-	ErrNoPublisher         = errors.New("No publisher")
-	ErrInvalidReq          = errors.New("invalid req url path")
-	ErrNoSupportVideoCodec = errors.New("no support video codec")
-	ErrNoSupportAudioCodec = errors.New("no support audio codec")
+	ErrNoPublisher         = fmt.Errorf("no publisher")
+	ErrInvalidReq          = fmt.Errorf("invalid req url path")
+	ErrNoSupportVideoCodec = fmt.Errorf("no support video codec")
+	ErrNoSupportAudioCodec = fmt.Errorf("no support audio codec")
 )
 
 var crossdomainxml = []byte(`<?xml version="1.0" ?>
@@ -33,12 +36,12 @@ var crossdomainxml = []byte(`<?xml version="1.0" ?>
 
 type Server struct {
 	listener net.Listener
-	conns    cmap.ConcurrentMap
+	conns    *sync.Map
 }
 
 func NewServer() *Server {
 	ret := &Server{
-		conns: cmap.New(),
+		conns: &sync.Map{},
 	}
 	go ret.checkStop()
 	return ret
@@ -56,20 +59,19 @@ func (server *Server) Serve(listener net.Listener) error {
 
 func (server *Server) GetWriter(info av.Info) av.WriteCloser {
 	var s *Source
-	ok := server.conns.Has(info.Key)
+	v, ok := server.conns.Load(info.Key)
 	if !ok {
-		log.Println("new hls source")
+		log.Debug("new hls source")
 		s = NewSource(info)
-		server.conns.Set(info.Key, s)
+		server.conns.Store(info.Key, s)
 	} else {
-		v, _ := server.conns.Get(info.Key)
 		s = v.(*Source)
 	}
 	return s
 }
 
 func (server *Server) getConn(key string) *Source {
-	v, ok := server.conns.Get(key)
+	v, ok := server.conns.Load(key)
 	if !ok {
 		return nil
 	}
@@ -79,13 +81,15 @@ func (server *Server) getConn(key string) *Source {
 func (server *Server) checkStop() {
 	for {
 		<-time.After(5 * time.Second)
-		for item := range server.conns.IterBuffered() {
-			v := item.Val.(*Source)
-			if !v.Alive() {
-				log.Println("check stop and remove: ", v.Info())
-				server.conns.Remove(item.Key)
+
+		server.conns.Range(func(key, val interface{}) bool {
+			v := val.(*Source)
+			if !v.Alive() && !configure.Config.GetBool("hls_keep_after_end") {
+				log.Debug("check stop and remove: ", v.Info())
+				server.conns.Delete(key)
 			}
-		}
+			return true
+		})
 	}
 }
 
@@ -110,7 +114,7 @@ func (server *Server) handle(w http.ResponseWriter, r *http.Request) {
 		}
 		body, err := tsCache.GenM3U8PlayList()
 		if err != nil {
-			log.Println("GenM3U8PlayList error: ", err)
+			log.Debug("GenM3U8PlayList error: ", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -130,7 +134,7 @@ func (server *Server) handle(w http.ResponseWriter, r *http.Request) {
 		tsCache := conn.GetCacheInc()
 		item, err := tsCache.GetItem(r.URL.Path)
 		if err != nil {
-			log.Println("GetItem error: ", err)
+			log.Debug("GetItem error: ", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -143,7 +147,7 @@ func (server *Server) handle(w http.ResponseWriter, r *http.Request) {
 
 func (server *Server) parseM3u8(pathstr string) (key string, err error) {
 	pathstr = strings.TrimLeft(pathstr, "/")
-	key = strings.TrimRight(pathstr, path.Ext(pathstr))
+	key = strings.Split(pathstr, path.Ext(pathstr))[0]
 	return
 }
 

@@ -2,6 +2,7 @@ package flv
 
 import (
 	"fmt"
+
 	"github.com/gwuhaolin/livego/av"
 )
 
@@ -130,8 +131,8 @@ func (tag *Tag) CompositionTime() int32 {
 	return tag.mediat.compositionTime
 }
 
-// ParseMeidaTagHeader, parse video, audio, tag header
-func (tag *Tag) ParseMeidaTagHeader(b []byte, isVideo bool) (n int, err error) {
+// ParseMediaTagHeader, parse video, audio, tag header
+func (tag *Tag) ParseMediaTagHeader(b []byte, isVideo bool) (n int, err error) {
 	switch isVideo {
 	case false:
 		n, err = tag.parseAudioHeader(b)
