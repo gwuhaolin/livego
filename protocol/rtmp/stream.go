@@ -402,8 +402,8 @@ func (s *Stream) closeInter() {
 	s.ws.Range(func(key, val interface{}) bool {
 		v := val.(*PackWriterCloser)
 		if v.w != nil {
+			v.w.Close(fmt.Errorf("closed"))
 			if v.w.Info().IsInterval() {
-				v.w.Close(fmt.Errorf("closed"))
 				s.ws.Delete(key)
 				log.Debugf("[%v] player closed and remove\n", v.w.Info())
 			}
