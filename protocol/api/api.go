@@ -195,8 +195,8 @@ func (server *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 		return true
 	})
 
-	resp, _ := json.Marshal(msgs)
-	res.Data = resp
+	//resp, _ := json.Marshal(msgs)
+	res.Data = msgs
 }
 
 //http://127.0.0.1:8090/control/pull?&oper=start&app=live&name=123456&url=rtmp://192.168.16.136/live/123456
