@@ -40,7 +40,9 @@ func (server *Server) Serve(l net.Listener) error {
 	mux.HandleFunc("/streams", func(w http.ResponseWriter, r *http.Request) {
 		server.getStream(w, r)
 	})
-	http.Serve(l, mux)
+	if err := http.Serve(l, mux); err != nil {
+		return err
+	}
 	return nil
 }
 
