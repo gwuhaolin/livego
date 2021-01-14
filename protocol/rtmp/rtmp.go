@@ -122,6 +122,16 @@ func (s *Server) handleConn(conn *core.Conn) error {
 
 	log.Debugf("handleConn: IsPublisher=%v", connServer.IsPublisher())
 	if connServer.IsPublisher() {
+		if configure.Config.GetBool("rtmp_noauth") {
+			key, err := configure.RoomKeys.GetKey(name)
+			if err != nil {
+				err := fmt.Errorf("Cannot create key err=%s", err.Error())
+				conn.Close()
+				log.Error("GetKey err: ", err)
+				return err
+			}
+			name = key
+		}
 		channel, err := configure.RoomKeys.GetChannel(name)
 		if err != nil {
 			err := fmt.Errorf("invalid key err=%s", err.Error())
