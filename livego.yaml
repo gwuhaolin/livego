@@ -2,6 +2,7 @@
 # level: info
 
 # # FLV Options
+# flv_archive: false
 # flv_dir: "./tmp"
 # httpflv_addr: ":7001"
 
@@ -20,3 +21,5 @@ server:
 - appname: live
   live: true
   hls: true
+  api: true
+  flv: true
