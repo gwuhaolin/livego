@@ -1,0 +1,4 @@
+package webrtc
+
+func startWebRTC() {
+}
