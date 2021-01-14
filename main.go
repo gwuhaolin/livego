@@ -137,7 +137,7 @@ func main() {
 	stream := rtmp.NewRtmpStream()
 	var hlsServer *hls.Server
 	if configure.Config.GetBool("hls") {
-		hlsServer := startHls()
+		hlsServer = startHls()
 	}
 	startHTTPFlv(stream)
 	startAPI(stream)
