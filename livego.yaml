@@ -6,6 +6,7 @@
 # httpflv_addr: ":7001"
 
 # # RTMP Options
+# rtmp_noauth: false
 # rtmp_addr: ":1935"
 # read_timeout: 10
 # write_timeout: 10
