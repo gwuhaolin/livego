@@ -1,4 +1,0 @@
-package webrtc
-
-func startWebRTC() {
-}
