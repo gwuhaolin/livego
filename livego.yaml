@@ -2,10 +2,12 @@
 # level: info
 
 # # FLV Options
+# flv_archive: false
 # flv_dir: "./tmp"
 # httpflv_addr: ":7001"
 
 # # RTMP Options
+# rtmp_noauth: false
 # rtmp_addr: ":1935"
 # read_timeout: 10
 # write_timeout: 10
@@ -19,3 +21,5 @@ server:
 - appname: live
   live: true
   hls: true
+  api: true
+  flv: true

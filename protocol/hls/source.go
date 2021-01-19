@@ -58,7 +58,7 @@ func NewSource(info av.Info) *Source {
 	go func() {
 		err := s.SendPacket()
 		if err != nil {
-			log.Warning("send packet error: ", err)
+			log.Debug("send packet error: ", err)
 			s.closed = true
 		}
 	}()

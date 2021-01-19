@@ -54,7 +54,7 @@ func NewFLVWriter(app, title, url string, ctx http.ResponseWriter) *FLVWriter {
 	go func() {
 		err := ret.SendPacket()
 		if err != nil {
-			log.Error("SendPacket error: ", err)
+			log.Debug("SendPacket error: ", err)
 			ret.closed = true
 		}
 

@@ -134,10 +134,21 @@ func main() {
         version: %s
 	`, VERSION)
 
-	stream := rtmp.NewRtmpStream()
-	hlsServer := startHls()
-	startHTTPFlv(stream)
-	startAPI(stream)
+	apps := configure.Applications{}
+	configure.Config.UnmarshalKey("server", &apps)
+	for _, app := range apps {
+		stream := rtmp.NewRtmpStream()
+		var hlsServer *hls.Server
+		if app.Hls {
+			hlsServer = startHls()
+		}
+		if app.Flv {
+			startHTTPFlv(stream)
+		}
+		if app.Api {
+			startAPI(stream)
+		}
 
-	startRtmp(stream, hlsServer)
+		startRtmp(stream, hlsServer)
+	}
 }

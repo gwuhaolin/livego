@@ -28,6 +28,8 @@ type Application struct {
 	Appname    string   `mapstructure:"appname"`
 	Live       bool     `mapstructure:"live"`
 	Hls        bool     `mapstructure:"hls"`
+	Flv        bool     `mapstructure:"flv"`
+	Api        bool     `mapstructure:"api"`
 	StaticPush []string `mapstructure:"static_push"`
 }
 
@@ -40,7 +42,9 @@ type JWT struct {
 type ServerCfg struct {
 	Level           string       `mapstructure:"level"`
 	ConfigFile      string       `mapstructure:"config_file"`
+	FLVArchive      bool         `mapstructure:"flv_archive"`
 	FLVDir          string       `mapstructure:"flv_dir"`
+	RTMPNoAuth      bool         `mapstructure:"rtmp_noauth"`
 	RTMPAddr        string       `mapstructure:"rtmp_addr"`
 	HTTPFLVAddr     string       `mapstructure:"httpflv_addr"`
 	HLSAddr         string       `mapstructure:"hls_addr"`
@@ -58,6 +62,8 @@ type ServerCfg struct {
 // default config
 var defaultConf = ServerCfg{
 	ConfigFile:      "livego.yaml",
+	FLVArchive:	false,
+	RTMPNoAuth:	false,
 	RTMPAddr:        ":1935",
 	HTTPFLVAddr:     ":7001",
 	HLSAddr:         ":7002",
@@ -70,6 +76,8 @@ var defaultConf = ServerCfg{
 		Appname:    "live",
 		Live:       true,
 		Hls:        true,
+		Flv:        true,
+		Api:        true,
 		StaticPush: nil,
 	}},
 }
