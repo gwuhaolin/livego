@@ -103,6 +103,9 @@ func JWTMiddleware(next http.Handler) http.Handler {
 func (s *Server) Serve(l net.Listener) error {
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	})
+
 	mux.Handle("/statics/", http.StripPrefix("/statics/", http.FileServer(http.Dir("statics"))))
 
 	mux.HandleFunc("/control/push", func(w http.ResponseWriter, r *http.Request) {
