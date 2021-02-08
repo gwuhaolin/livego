@@ -97,6 +97,7 @@ func (source *Source) DropPacket(pktQue chan *av.Packet, info av.Info) {
 	log.Debug("packet queue len: ", len(pktQue))
 }
 
+// 推送过来的数据包
 func (source *Source) Write(p *av.Packet) (err error) {
 	err = nil
 	if source.closed {

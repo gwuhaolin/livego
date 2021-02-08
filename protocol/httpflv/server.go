@@ -122,7 +122,9 @@ func (server *Server) handleConn(w http.ResponseWriter, r *http.Request) {
 	} else {
 		include := false
 		for _, item := range msgs.Publishers {
+			log.Debug("playPath=" + path + ",publishPath=" + item.Key)
 			if item.Key == path {
+				log.Info("PlaySuccess:" + "path=" + path)
 				include = true
 				break
 			}

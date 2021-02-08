@@ -1,22 +1,39 @@
 # # Logger level
-# level: info
+level: debug
 
 # # FLV Options
-# flv_archive: false
-# flv_dir: "./tmp"
-# httpflv_addr: ":7001"
+# flv_archive：表示存档，将推送过来的数据进行保存
+flv_archive: true
+# flv_dir：存到路径
+flv_dir: "./tmp"
+# httpflv_addr：存档的端口
+httpflv_addr: ":7001"
 
 # # RTMP Options
-# rtmp_noauth: false
-# rtmp_addr: ":1935"
-# read_timeout: 10
-# write_timeout: 10
+rtmp_noauth: true
+rtmp_addr: ":1935"
+read_timeout: 10
+write_timeout: 10
 
 # # HLS Options
-# hls_addr: ":7002"
+#hls_addr: ":7002"
+
+# # livego是支出两种存储方式，一种是localCache，另一种是redis,想启用redis就需要在配置文件中增加两项配置
+# #想启用redis需要打开以下两项注释,不打开默认启用本地存储
+#redis_addr: 127.0.0.1:6379
+#redis_pwd:
+
+# #想启用jwt需要打开以下三项注释
+# # # algorithm: 仅支持 以下三种算法 默认HS256算法
+# # # # HMAC签名方法： HS256 HS384 HS512
+# # # # RSA签名方法： RS256，RS384，RS512
+# # # # ECDSA签名方法： ES256，ES384，ES512
+#jwt:
+#- secret: xxx
+#  algorithm: xxx
 
 # # API Options
-# api_addr: ":8090"
+api_addr: ":8090"
 server:
 - appname: live
   live: true
