@@ -56,6 +56,7 @@ type FLVWriter struct {
 	buf             []byte
 	closed          chan struct{}
 	ctx             *os.File
+	closedWriter    bool
 }
 
 func NewFLVWriter(app, title, url string, ctx *os.File) *FLVWriter {
@@ -131,6 +132,10 @@ func (writer *FLVWriter) Wait() {
 }
 
 func (writer *FLVWriter) Close(error) {
+	if writer.closedWriter {
+		return
+	}
+	writer.closedWriter = true
 	writer.ctx.Close()
 	close(writer.closed)
 }
