@@ -202,7 +202,7 @@ func (connServer *ConnServer) publishResp(cur *ChunkStream) error {
 	event := make(amf.Object)
 	event["level"] = "status"
 	event["code"] = "NetStream.Publish.Start"
-	event["description"] = "Start publising."
+	event["description"] = "Start publishing."
 	return connServer.writeMsg(cur.CSID, cur.StreamID, "onStatus", 0, nil, event)
 }
 
