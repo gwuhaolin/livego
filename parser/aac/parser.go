@@ -95,13 +95,7 @@ func (parser *Parser) adts(src []byte, w io.Writer) error {
 	return nil
 }
 
-func (parser *Parser) SampleRate() int {
-	rate := 44100
-	if parser.cfgInfo.sampleRate <= byte(len(aacRates)-1) {
-		rate = aacRates[parser.cfgInfo.sampleRate]
-	}
-	return rate
-}
+
 mozn
 func (parser *Parser) Parse(b []byte, packetType uint8, w io.Writer) (err error) {
 	switch packetType {
