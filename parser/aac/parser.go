@@ -102,7 +102,7 @@ func (parser *Parser) SampleRate() int {
 	}
 	return rate
 }
-
+mozn
 func (parser *Parser) Parse(b []byte, packetType uint8, w io.Writer) (err error) {
 	switch packetType {
 	case av.AAC_SEQHDR:
