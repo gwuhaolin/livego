@@ -37,10 +37,8 @@ func startHls() *hls.Server {
 	return hlsServer
 }
 
-var rtmpAddr string
-
 func startRtmp(stream *rtmp.RtmpStream, hlsServer *hls.Server) {
-	rtmpAddr = configure.Config.GetString("rtmp_addr")
+	rtmpAddr := configure.Config.GetString("rtmp_addr")
 
 	rtmpListen, err := net.Listen("tcp", rtmpAddr)
 	if err != nil {
@@ -88,6 +86,7 @@ func startHTTPFlv(stream *rtmp.RtmpStream) {
 
 func startAPI(stream *rtmp.RtmpStream) {
 	apiAddr := configure.Config.GetString("api_addr")
+	rtmpAddr := configure.Config.GetString("rtmp_addr")
 
 	if apiAddr != "" {
 		opListen, err := net.Listen("tcp", apiAddr)
