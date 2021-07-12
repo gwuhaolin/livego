@@ -2,8 +2,8 @@
     <img src='./logo.png' width='200px' height='80px'/>
 </p>
 
-[![Test](https://github.com/gwuhaolin/livego/workflows/Test/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ATest)
-[![Release](https://github.com/gwuhaolin/livego/workflows/Release/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ARelease)
+[![Test](https://github.com/dudebing99/livego/workflows/Test/badge.svg)](https://github.com/dudebing99/livego/actions?query=workflow%3ATest)
+[![Release](https://github.com/dudebing99/livego/workflows/Release/badge.svg)](https://github.com/dudebing99/livego/actions?query=workflow%3ARelease)
 
 简单高效的直播服务器：
 - 安装和使用非常简单；
@@ -26,7 +26,7 @@
 - MP3
 
 ## 安装
-直接下载编译好的[二进制文件](https://github.com/gwuhaolin/livego/releases)后，在命令行中执行。
+直接下载编译好的[二进制文件](https://github.com/dudebing99/livego/releases)后，在命令行中执行。
 
 #### 从 Docker 启动
 执行`docker run -p 1935:1935 -p 7001:7001 -p 7002:7002 -p 8090:8090 -d gwuhaolin/livego`启动
@@ -44,7 +44,7 @@
     - `FLV`:`http://127.0.0.1:7001/{appname}/movie.flv`
     - `HLS`:`http://127.0.0.1:7002/{appname}/movie.m3u8`
 
-所有配置项: 
+所有配置项:
 ```bash
 ./livego  -h
 Usage of ./livego:
@@ -62,6 +62,4 @@ Usage of ./livego:
 ```
 
 ### [和 flv.js 搭配使用](https://github.com/gwuhaolin/blog/issues/3)
-
-对Golang感兴趣？请看[Golang 中文学习资料汇总](http://go.wuhaolin.cn/)
 

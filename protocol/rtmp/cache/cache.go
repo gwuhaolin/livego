@@ -1,8 +1,8 @@
 package cache
 
 import (
-	"github.com/gwuhaolin/livego/av"
-	"github.com/gwuhaolin/livego/configure"
+	"github.com/dudebing99/livego/av"
+	"github.com/dudebing99/livego/configure"
 )
 
 type Cache struct {
