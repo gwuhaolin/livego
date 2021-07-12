@@ -166,7 +166,7 @@ func (s *Stream) StartStaticPush() {
 	streamname := key[index+1:]
 	appname := dscr[0]
 
-	log.Debugf("StartStaticPush: current streamname=%s， appname=%s", streamname, appname)
+	log.Debugf("StartStaticPush: current streamname=%s, appname=%s", streamname, appname)
 	pushurllist, err := rtmprelay.GetStaticPushList(appname)
 	if err != nil || len(pushurllist) < 1 {
 		log.Debugf("StartStaticPush: GetStaticPushList error=%v", err)
@@ -207,7 +207,7 @@ func (s *Stream) StopStaticPush() {
 	streamname := key[index+1:]
 	appname := dscr[0]
 
-	log.Debugf("StopStaticPush: current streamname=%s， appname=%s", streamname, appname)
+	log.Debugf("StopStaticPush: current streamname=%s, appname=%s", streamname, appname)
 	pushurllist, err := rtmprelay.GetStaticPushList(appname)
 	if err != nil || len(pushurllist) < 1 {
 		log.Debugf("StopStaticPush: GetStaticPushList error=%v", err)
@@ -239,7 +239,7 @@ func (s *Stream) IsSendStaticPush() bool {
 
 	appname := dscr[0]
 
-	//log.Debugf("SendStaticPush: current streamname=%s， appname=%s", streamname, appname)
+	//log.Debugf("SendStaticPush: current streamname=%s, appname=%s", streamname, appname)
 	pushurllist, err := rtmprelay.GetStaticPushList(appname)
 	if err != nil || len(pushurllist) < 1 {
 		//log.Debugf("SendStaticPush: GetStaticPushList error=%v", err)
@@ -285,7 +285,7 @@ func (s *Stream) SendStaticPush(packet av.Packet) {
 	streamname := key[index+1:]
 	appname := dscr[0]
 
-	//log.Debugf("SendStaticPush: current streamname=%s， appname=%s", streamname, appname)
+	//log.Debugf("SendStaticPush: current streamname=%s, appname=%s", streamname, appname)
 	pushurllist, err := rtmprelay.GetStaticPushList(appname)
 	if err != nil || len(pushurllist) < 1 {
 		//log.Debugf("SendStaticPush: GetStaticPushList error=%v", err)

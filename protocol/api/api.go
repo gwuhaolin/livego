@@ -226,7 +226,7 @@ func (s *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 	log.Debugf("control pull: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
 	if (len(app) <= 0) || (len(name) <= 0) || (len(url) <= 0) {
 		res.Status = 400
-		res.Data = "control push parameter error, please check them."
+		res.Data = "control pull parameter error, please check them."
 		return
 	}
 
@@ -243,23 +243,23 @@ func (s *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 			res.Data = retString
 			return
 		}
-		log.Debugf("rtmprelay stop push %s from %s", remoteurl, localurl)
+		log.Debugf("rtmprelay stop pull %s from %s", remoteurl, localurl)
 		pullRtmprelay.Stop()
 
 		delete(s.session, keyString)
-		retString = fmt.Sprintf("<h1>push url stop %s ok</h1></br>", url)
+		retString = fmt.Sprintf("<h1>pull url stop %s ok</h1></br>", url)
 		res.Status = 400
 		res.Data = retString
 		log.Debugf("pull stop return %s", retString)
 	} else {
 		pullRtmprelay := rtmprelay.NewRtmpRelay(&localurl, &remoteurl)
-		log.Debugf("rtmprelay start push %s from %s", remoteurl, localurl)
+		log.Debugf("rtmprelay start pull %s from %s", remoteurl, localurl)
 		err = pullRtmprelay.Start()
 		if err != nil {
-			retString = fmt.Sprintf("push error=%v", err)
+			retString = fmt.Sprintf("pull error=%v", err)
 		} else {
 			s.session[keyString] = pullRtmprelay
-			retString = fmt.Sprintf("<h1>push url start %s ok</h1></br>", url)
+			retString = fmt.Sprintf("<h1>pull url start %s ok</h1></br>", url)
 		}
 		res.Status = 400
 		res.Data = retString

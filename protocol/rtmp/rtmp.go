@@ -92,7 +92,7 @@ func (s *Server) Serve(listener net.Listener) (err error) {
 		}
 		conn := core.NewConn(netconn, 4*1024)
 		log.Debug("new client, connect remote: ", conn.RemoteAddr().String(),
-			"local:", conn.LocalAddr().String())
+			", local: ", conn.LocalAddr().String())
 		go s.handleConn(conn)
 	}
 }
