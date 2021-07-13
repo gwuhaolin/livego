@@ -199,7 +199,7 @@ func (server *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 	res.Data = msgs
 }
 
-//http://127.0.0.1:8090/control/pull?&oper=start&app=live&channel_key={channel_key}&url=rtmp://{pull_streaming_server}/live/movie
+//http://127.0.0.1:8090/control/pull?&oper=start&app=live&channel_key=rfBd56ti2SMtYvSgD5xAV0YU99zampta7Z7S575KLkIZ9PYk&url=rtmp://{pull_streaming_server}/live/movie
 func (s *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 	var retString string
 	var err error
@@ -214,13 +214,13 @@ func (s *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 
 	if req.ParseForm() != nil {
 		res.Status = 400
-		res.Data = "url: /control/pull?&oper=start&app=live&channel_key={channel_key}&url=rtmp://{pull_streaming_server}/live/movie"
+		res.Data = "url: /control/pull?&oper=start&app=live&channel_key=rfBd56ti2SMtYvSgD5xAV0YU99zampta7Z7S575KLkIZ9PYk&url=rtmp://{pull_streaming_server}/live/movie"
 		return
 	}
 
 	oper := req.Form.Get("oper")
 	app := req.Form.Get("app")
-	channelKey := req.Form.Get("channelKey")
+	channelKey := req.Form.Get("channel_key")
 	url := req.Form.Get("url")
 
 	log.Debugf("control pull: oper=%v, app=%v, channelKey=%v, url=%v", oper, app, channelKey, url)
@@ -267,7 +267,7 @@ func (s *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-//http://127.0.0.1:8090/control/push?&oper=start&app=live&channel_key={channel_key}&url=rtmp://{push_streaming_server}/live/movie
+//http://127.0.0.1:8090/control/push?&oper=start&app=live&channel_key=rfBd56ti2SMtYvSgD5xAV0YU99zampta7Z7S575KLkIZ9PYk&url=rtmp://{push_streaming_server}/live/movie
 func (s *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 	var retString string
 	var err error
@@ -281,7 +281,7 @@ func (s *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 	defer res.SendJson()
 
 	if req.ParseForm() != nil {
-		res.Data = "url: /control/push?&oper=start&app=live&channel_key={channel_key}&url=rtmp://{push_streaming_server}/live/movie"
+		res.Data = "url: /control/push?&oper=start&app=live&channel_key=rfBd56ti2SMtYvSgD5xAV0YU99zampta7Z7S575KLkIZ9PYk&url=rtmp://{push_streaming_server}/live/movie"
 		return
 	}
 
