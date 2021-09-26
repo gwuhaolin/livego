@@ -62,8 +62,8 @@ type ServerCfg struct {
 // default config
 var defaultConf = ServerCfg{
 	ConfigFile:      "livego.yaml",
-	FLVArchive:	false,
-	RTMPNoAuth:	false,
+	FLVArchive:      false,
+	RTMPNoAuth:      false,
 	RTMPAddr:        ":1935",
 	HTTPFLVAddr:     ":7001",
 	HLSAddr:         ":7002",
@@ -82,7 +82,15 @@ var defaultConf = ServerCfg{
 	}},
 }
 
-var Config = viper.New()
+var (
+	Config = viper.New()
+
+	// BypassInit can be used to bypass the init() function by setting this
+	// value to True at compile time.
+	//
+	// go build -ldflags "-X 'github.com/gwuhaolin/livego/configure.BypassInit=true'" -o livego main.go
+	BypassInit string = ""
+)
 
 func initLog() {
 	if l, err := log.ParseLevel(Config.GetString("level")); err == nil {
@@ -92,6 +100,12 @@ func initLog() {
 }
 
 func init() {
+	if BypassInit == "" {
+		initDefault()
+	}
+}
+
+func initDefault() {
 	defer Init()
 
 	// Default config
