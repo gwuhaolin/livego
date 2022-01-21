@@ -202,7 +202,7 @@ func (server *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 			return true
 		})
 	} else {
-        // Warning: The room should be in the "live/stream" format!
+		// Warning: The room should be in the "live/stream" format!
 		roomInfo, exists := (rtmpStream.GetStreams()).Load(room)
 		if exists == false {
 			res.Status = 404
@@ -299,12 +299,13 @@ func (s *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 		log.Debugf("rtmprelay start push %s from %s", remoteurl, localurl)
 		err = pullRtmprelay.Start()
 		if err != nil {
+			res.Status = 400
 			retString = fmt.Sprintf("push error=%v", err)
 		} else {
 			s.session[keyString] = pullRtmprelay
-			retString = fmt.Sprintf("<h1>push url start %s ok</h1></br>", url)
+			retString = fmt.Sprintf("<h1>pull url start %s ok</h1></br>", url)
 		}
-		res.Status = 400
+
 		res.Data = retString
 		log.Debugf("pull start return %s", retString)
 	}

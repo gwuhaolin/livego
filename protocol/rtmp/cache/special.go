@@ -43,5 +43,8 @@ func (specialCache *SpecialCache) Send(w av.WriteCloser) error {
 	if !specialCache.full {
 		return nil
 	}
-	return w.Write(specialCache.p)
+
+	// demux in hls will change p.Data, only send a copy here
+	newPacket := *specialCache.p
+	return w.Write(&newPacket)
 }
