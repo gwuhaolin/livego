@@ -54,6 +54,7 @@ type ServerCfg struct {
 	RedisPwd        string       `mapstructure:"redis_pwd"`
 	ReadTimeout     int          `mapstructure:"read_timeout"`
 	WriteTimeout    int          `mapstructure:"write_timeout"`
+	EnableTLSVerify bool         `mapstructure:"enable_tls_verify"`
 	GopNum          int          `mapstructure:"gop_num"`
 	JWT             JWT          `mapstructure:"jwt"`
 	Server          Applications `mapstructure:"server"`
@@ -71,6 +72,7 @@ var defaultConf = ServerCfg{
 	APIAddr:         ":8090",
 	WriteTimeout:    10,
 	ReadTimeout:     10,
+	EnableTLSVerify: true,
 	GopNum:          1,
 	Server: Applications{{
 		Appname:    "live",
@@ -127,6 +129,7 @@ func initDefault() {
 	pflag.Int("read_timeout", 10, "read time out")
 	pflag.Int("write_timeout", 10, "write time out")
 	pflag.Int("gop_num", 1, "gop num")
+	pflag.Bool("enable_tls_verify", true, "Use system root CA to verify RTMPS connection, set this flag to false on Windows")
 	pflag.Parse()
 	Config.BindPFlags(pflag.CommandLine)
 

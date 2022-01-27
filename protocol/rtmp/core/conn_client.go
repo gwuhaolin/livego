@@ -2,6 +2,8 @@ package core
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"math/rand"
@@ -10,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/gwuhaolin/livego/av"
+	"github.com/gwuhaolin/livego/configure"
 	"github.com/gwuhaolin/livego/protocol/amf"
 
 	log "github.com/sirupsen/logrus"
@@ -36,9 +39,9 @@ type ConnClient struct {
 	tcurl      string
 	app        string
 	title      string
-	query      string
 	curcmdName string
 	streamid   uint32
+	isRTMPS    bool
 	conn       *Conn
 	encoder    *amf.Encoder
 	decoder    *amf.Decoder
@@ -221,9 +224,20 @@ func (connClient *ConnClient) Start(url string, method string) error {
 	}
 	connClient.app = ps[0]
 	connClient.title = ps[1]
-	connClient.query = u.RawQuery
-	connClient.tcurl = "rtmp://" + u.Host + "/" + connClient.app
-	port := ":1935"
+	if u.RawQuery != "" {
+		connClient.title += "?" + u.RawQuery
+	}
+	connClient.isRTMPS = strings.HasPrefix(url, "rtmps://")
+
+	var port string
+	if connClient.isRTMPS {
+		connClient.tcurl = "rtmps://" + u.Host + "/" + connClient.app
+		port = ":443"
+	} else {
+		connClient.tcurl = "rtmp://" + u.Host + "/" + connClient.app
+		port = ":1935"
+	}
+
 	host := u.Host
 	localIP := ":0"
 	var remoteIP string
@@ -256,10 +270,32 @@ func (connClient *ConnClient) Start(url string, method string) error {
 		log.Warning(err)
 		return err
 	}
-	conn, err := net.DialTCP("tcp", local, remote)
-	if err != nil {
-		log.Warning(err)
-		return err
+
+	var conn net.Conn
+	if connClient.isRTMPS {
+		var config tls.Config
+		if configure.Config.GetBool("enable_tls_verify") {
+			roots, err := x509.SystemCertPool()
+			if err != nil {
+				log.Warning(err)
+				return err
+			}
+			config.RootCAs = roots
+		} else {
+			config.InsecureSkipVerify = true
+		}
+
+		conn, err = tls.Dial("tcp", remoteIP, &config)
+		if err != nil {
+			log.Warning(err)
+			return err
+		}
+	} else {
+		conn, err = net.DialTCP("tcp", local, remote)
+		if err != nil {
+			log.Warning(err)
+			return err
+		}
 	}
 
 	log.Debug("connection:", "local:", conn.LocalAddr(), "remote:", conn.RemoteAddr())

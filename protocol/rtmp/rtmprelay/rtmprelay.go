@@ -3,9 +3,9 @@ package rtmprelay
 import (
 	"bytes"
 	"fmt"
-	"github.com/gwuhaolin/livego/av"
 	"io"
 
+	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/protocol/amf"
 	"github.com/gwuhaolin/livego/protocol/rtmp/core"
 
@@ -62,6 +62,7 @@ func (self *RtmpRelay) rcvPlayChunkStream() {
 			log.Debugf("rcvPlayRtmpMediaPacket: vs=%v, err=%v", vs, err)
 		case 18:
 			log.Debug("rcvPlayRtmpMediaPacket: metadata....")
+			self.cs_chan <- rc
 		case 8, 9:
 			self.cs_chan <- rc
 		}
