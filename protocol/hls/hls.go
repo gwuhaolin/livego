@@ -53,7 +53,13 @@ func (server *Server) Serve(listener net.Listener) error {
 		server.handle(w, r)
 	})
 	server.listener = listener
-	http.Serve(listener, mux)
+
+	if configure.Config.GetBool("use_hls_https") {
+		http.ServeTLS(listener, mux, "server.crt", "server.key")
+	} else {
+		http.Serve(listener, mux)
+	}
+
 	return nil
 }
 
