@@ -41,6 +41,7 @@ type JWT struct {
 }
 type ServerCfg struct {
 	Level           string       `mapstructure:"level"`
+	IsProtected     bool         `mapstructure:"is_protected"`
 	ConfigFile      string       `mapstructure:"config_file"`
 	FLVArchive      bool         `mapstructure:"flv_archive"`
 	FLVDir          string       `mapstructure:"flv_dir"`
@@ -52,6 +53,7 @@ type ServerCfg struct {
 	APIAddr         string       `mapstructure:"api_addr"`
 	RedisAddr       string       `mapstructure:"redis_addr"`
 	RedisPwd        string       `mapstructure:"redis_pwd"`
+	RedisDb         int          `mapstructure:"redis_db"`
 	ReadTimeout     int          `mapstructure:"read_timeout"`
 	WriteTimeout    int          `mapstructure:"write_timeout"`
 	EnableTLSVerify bool         `mapstructure:"enable_tls_verify"`
@@ -183,4 +185,10 @@ func GetStaticPushUrlList(appname string) ([]string, bool) {
 		}
 	}
 	return nil, false
+}
+
+func IsProtected() bool {
+	c := ServerCfg{}
+	Config.Unmarshal(&c)
+	return c.IsProtected
 }
