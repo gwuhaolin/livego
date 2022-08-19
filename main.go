@@ -47,8 +47,6 @@ func startRtmp(stream *rtmp.RtmpStream, hlsServer *hls.Server) {
 	if isRtmps {
 		certPath := configure.Config.GetString("rtmps_cert")
 		keyPath := configure.Config.GetString("rtmps_key")
-		log.Info(certPath)
-		log.Info(keyPath)
 		cert, err := tls.LoadX509KeyPair(certPath, keyPath)
 		if err != nil {
 			log.Fatal(err)
