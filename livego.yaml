@@ -9,6 +9,9 @@
 # # RTMP Options
 # rtmp_noauth: false
 # rtmp_addr: ":1935"
+# enable_rtmps: true
+# rtmps_cert: server.crt
+# rtmps_key: server.key
 # read_timeout: 10
 # write_timeout: 10
 
