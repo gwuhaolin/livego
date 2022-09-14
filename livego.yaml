@@ -21,6 +21,9 @@
 
 # # API Options
 # api_addr: ":8090"
+is_protected: true
+redis_addr: "localhost:6379"
+# redis_db: 10
 server:
 - appname: live
   live: true

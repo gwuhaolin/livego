@@ -10,6 +10,7 @@ import (
 
 	"github.com/gwuhaolin/livego/utils/uid"
 
+	"github.com/gwuhaolin/livego/auth"
 	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/configure"
 	"github.com/gwuhaolin/livego/container/flv"
@@ -91,8 +92,8 @@ func (s *Server) Serve(listener net.Listener) (err error) {
 			return
 		}
 		conn := core.NewConn(netconn, 4*1024)
-		log.Debug("new client, connect remote: ", conn.RemoteAddr().String(),
-			"local:", conn.LocalAddr().String())
+		log.Debugf("new client, connect remote: %s local: %s", conn.RemoteAddr().String(),
+			conn.LocalAddr().String())
 		go s.handleConn(conn)
 	}
 }
@@ -111,7 +112,16 @@ func (s *Server) handleConn(conn *core.Conn) error {
 		return err
 	}
 
-	appname, name, _ := connServer.GetInfo()
+	appname, name, uri := connServer.GetInfo()
+
+	// If is not a publisher we need to validate the credential here......
+	if !connServer.IsPublisher() && configure.IsProtected() {
+		if allow, err := auth.Auth.Allow(conn.RemoteAddr().String(), uri); err != nil || !allow {
+			conn.Close()
+			log.Error("handleConn auth err: ", allow, err)
+			return err
+		}
+	}
 
 	if ret := configure.CheckAppName(appname); !ret {
 		err := fmt.Errorf("application name=%s is not configured", appname)
