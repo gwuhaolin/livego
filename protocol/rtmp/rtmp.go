@@ -134,7 +134,7 @@ func (s *Server) handleConn(conn *core.Conn) error {
 		}
 		channel, err := configure.RoomKeys.GetChannel(name)
 		if err != nil {
-			err := fmt.Errorf("invalid key err=%s", err.Error())
+			err := fmt.Errorf("invalid key err=%s, name=%s", err.Error(), name)
 			conn.Close()
 			log.Error("CheckKey err: ", err)
 			return err

@@ -159,12 +159,8 @@ func (server *Server) parseM3u8(pathstr string) (key string, err error) {
 
 func (server *Server) parseTs(pathstr string) (key string, err error) {
 	pathstr = strings.TrimLeft(pathstr, "/")
-	paths := strings.SplitN(pathstr, "/", 3)
-	if len(paths) != 3 {
-		err = fmt.Errorf("invalid path=%s", pathstr)
-		return
-	}
-	key = paths[0] + "/" + paths[1]
+	paths := strings.Split(pathstr, "/")	
+	key = strings.Join(paths[:len(paths)-1], "/")
 
 	return
 }
