@@ -6,3 +6,6 @@ tmp
 vendor
 livego
 livego.exe
+
+## Yaml configuration file
+livego.yaml
