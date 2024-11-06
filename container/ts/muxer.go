@@ -288,7 +288,7 @@ type pesHeader struct {
 	data [tsPacketLen]byte
 }
 
-//pesPacket return pes packet
+// packet return pes packet
 func (header *pesHeader) packet(p *av.Packet, pts, dts int64) error {
 	//PES header
 	i := 0
