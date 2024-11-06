@@ -5,7 +5,7 @@
 [中文](./README_cn.md)
 
 [![Test](https://github.com/gwuhaolin/livego/actions/workflows/test.yml/badge.svg)](https://github.com/gwuhaolin/livego/actions/workflows/test.yml)
-[![Release](https://github.com/gwuhaolin/livego/workflows/Release/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ARelease)
+[![Release](https://github.com/gwuhaolin/livego/actions/workflows/release.yml/badge.svg)](https://github.com/gwuhaolin/livego/actions/workflows/release.yml)
 
 Simple and efficient live broadcast server:
 - Very simple to install and use;
