@@ -4,7 +4,7 @@
 
 [中文](./README_cn.md)
 
-[![Test](https://github.com/gwuhaolin/livego/workflows/Test/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ATest)
+[![Test](https://github.com/gwuhaolin/livego/actions/workflows/test.yml/badge.svg)](https://github.com/gwuhaolin/livego/actions/workflows/test.yml)
 [![Release](https://github.com/gwuhaolin/livego/workflows/Release/badge.svg)](https://github.com/gwuhaolin/livego/actions?query=workflow%3ARelease)
 
 Simple and efficient live broadcast server:
