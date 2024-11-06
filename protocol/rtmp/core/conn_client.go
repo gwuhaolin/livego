@@ -29,7 +29,7 @@ var (
 )
 
 var (
-	ErrFail = fmt.Errorf("respone err")
+	ErrFail = fmt.Errorf("response err")
 )
 
 type ConnClient struct {
