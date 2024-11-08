@@ -350,6 +350,7 @@ func (connServer *ConnServer) GetInfo() (app string, name string, url string) {
 	app = connServer.ConnInfo.App
 	name = connServer.PublishInfo.Name
 	url = connServer.ConnInfo.TcUrl + "/" + connServer.PublishInfo.Name
+	log.Debugf("connServer.GetInfo: [%s]-[%s]-[%s]", app, name, url)
 	return
 }
 
