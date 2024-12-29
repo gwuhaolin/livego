@@ -128,6 +128,7 @@ func initDefault() {
 	pflag.String("config_file", "livego.yaml", "configure filename")
 	pflag.String("level", "info", "Log level")
 	pflag.Bool("hls_keep_after_end", false, "Maintains the HLS after the stream ends")
+	pflag.Bool("flv_archive", false, "Enable or disable FLV recording. If set to true, the server will record the live stream as FLV files.")
 	pflag.String("flv_dir", "tmp", "output flv file at flvDir/APP/KEY_TIME.flv")
 	pflag.Int("read_timeout", 10, "read time out")
 	pflag.Int("write_timeout", 10, "write time out")
