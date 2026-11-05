@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ClipMyHorseTV/livego/utils/uid"
@@ -191,11 +192,14 @@ type StaticsBW struct {
 }
 
 type VirWriter struct {
-	Uid    string
-	closed bool
+	Uid string
 	av.RWBaser
-	conn        StreamReadWriteCloser
+	conn StreamReadWriteCloser
+	// packetQueue is never closed, so concurrent Write and Close cannot race
+	// on it. Shutdown is signalled through done instead.
 	packetQueue chan *av.Packet
+	done        chan struct{}
+	closeOnce   sync.Once
 	WriteBWInfo StaticsBW
 }
 
@@ -205,6 +209,7 @@ func NewVirWriter(conn StreamReadWriteCloser) *VirWriter {
 		conn:        conn,
 		RWBaser:     av.NewRWBaser(time.Second * time.Duration(writeTimeout)),
 		packetQueue: make(chan *av.Packet, maxQueueNum),
+		done:        make(chan struct{}),
 		WriteBWInfo: StaticsBW{0, 0, 0, 0, 0, 0, 0, 0},
 	}
 
@@ -252,30 +257,73 @@ func (v *VirWriter) Check() {
 	}
 }
 
+// markClosed signals shutdown to Write and SendPacket. Safe to call more than once.
+func (v *VirWriter) markClosed() {
+	v.closeOnce.Do(func() { close(v.done) })
+}
+
+func (v *VirWriter) isClosed() bool {
+	select {
+	case <-v.done:
+		return true
+	default:
+		return false
+	}
+}
+
+// recv takes a packet from pktQue, giving up once the writer is closed.
+func (v *VirWriter) recv(pktQue chan *av.Packet) (*av.Packet, bool) {
+	select {
+	case p := <-pktQue:
+		return p, true
+	case <-v.done:
+		return nil, false
+	}
+}
+
+// send puts a packet into pktQue, giving up once the writer is closed.
+func (v *VirWriter) send(pktQue chan *av.Packet, p *av.Packet) bool {
+	select {
+	case pktQue <- p:
+		return true
+	case <-v.done:
+		return false
+	}
+}
+
 func (v *VirWriter) DropPacket(pktQue chan *av.Packet, info av.Info) {
 	log.Warningf("[%v] packet queue max!!!", info)
 	for i := 0; i < maxQueueNum-84; i++ {
-		tmpPkt, ok := <-pktQue
-		// try to don't drop audio
-		if ok && tmpPkt.IsAudio {
-			if len(pktQue) > maxQueueNum-2 {
-				log.Debug("drop audio pkt")
-				<-pktQue
-			} else {
-				pktQue <- tmpPkt
-			}
-
+		tmpPkt, ok := v.recv(pktQue)
+		if !ok {
+			return
 		}
 
-		if ok && tmpPkt.IsVideo {
+		// try to don't drop audio
+		if tmpPkt.IsAudio {
+			if len(pktQue) > maxQueueNum-2 {
+				log.Debug("drop audio pkt")
+				if _, ok := v.recv(pktQue); !ok {
+					return
+				}
+			} else if !v.send(pktQue, tmpPkt) {
+				return
+			}
+		}
+
+		if tmpPkt.IsVideo {
 			videoPkt, ok := tmpPkt.Header.(av.VideoPacketHeader)
 			// dont't drop sps config and dont't drop key frame
 			if ok && (videoPkt.IsSeq() || videoPkt.IsKeyFrame()) {
-				pktQue <- tmpPkt
+				if !v.send(pktQue, tmpPkt) {
+					return
+				}
 			}
 			if len(pktQue) > maxQueueNum-10 {
 				log.Debug("drop video pkt")
-				<-pktQue
+				if _, ok := v.recv(pktQue); !ok {
+					return
+				}
 			}
 		}
 
@@ -283,32 +331,25 @@ func (v *VirWriter) DropPacket(pktQue chan *av.Packet, info av.Info) {
 	log.Debug("packet queue len: ", len(pktQue))
 }
 
-func (v *VirWriter) Write(p *av.Packet) (err error) {
-	err = nil
-
-	if v.closed {
-		err = fmt.Errorf("VirWriter closed")
-		return
+func (v *VirWriter) Write(p *av.Packet) error {
+	if v.isClosed() {
+		return fmt.Errorf("VirWriter closed")
 	}
-	defer func() {
-		if e := recover(); e != nil {
-			err = fmt.Errorf("VirWriter has already been closed:%v", e)
-		}
-	}()
+
 	if len(v.packetQueue) >= maxQueueNum-24 {
 		v.DropPacket(v.packetQueue, v.Info())
-	} else {
-		v.packetQueue <- p
+	} else if !v.send(v.packetQueue, p) {
+		return fmt.Errorf("VirWriter closed")
 	}
 
-	return
+	return nil
 }
 
 func (v *VirWriter) SendPacket() error {
 	Flush := reflect.ValueOf(v.conn).MethodByName("Flush")
 	var cs core.ChunkStream
 	for {
-		p, ok := <-v.packetQueue
+		p, ok := v.recv(v.packetQueue)
 		if ok {
 			cs.Data = p.Data
 			cs.Length = uint32(len(p.Data))
@@ -331,7 +372,7 @@ func (v *VirWriter) SendPacket() error {
 			v.RecTimeStamp(cs.Timestamp, cs.TypeID)
 			err := v.conn.Write(cs)
 			if err != nil {
-				v.closed = true
+				v.markClosed()
 				return err
 			}
 			Flush.Call(nil)
@@ -357,10 +398,7 @@ func (v *VirWriter) Info() (ret av.Info) {
 
 func (v *VirWriter) Close(err error) {
 	log.Warning("player ", v.Info(), "closed: "+err.Error())
-	if !v.closed {
-		close(v.packetQueue)
-	}
-	v.closed = true
+	v.markClosed()
 	v.conn.Close(err)
 }
 
